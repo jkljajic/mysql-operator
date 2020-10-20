@@ -27,9 +27,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 
-	backuputil "github.com/oracle/mysql-operator/pkg/api/backup"
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	mysqlclientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
+	backuputil "github.com/jkljajic/mysql-operator/pkg/api/backup"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	mysqlclientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
 )
 
 // BackupTestJig is a jig to help Backup testing.

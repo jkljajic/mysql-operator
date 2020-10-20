@@ -18,8 +18,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	"github.com/oracle/mysql-operator/pkg/backup/executor/mysqldump"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/backup/executor/mysqldump"
 )
 
 const (

@@ -31,13 +31,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	constants "github.com/oracle/mysql-operator/pkg/constants"
-	"github.com/oracle/mysql-operator/pkg/controllers/util"
-	mysqlfake "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/fake"
-	informers "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions"
-	. "github.com/oracle/mysql-operator/pkg/util/test"
-	"github.com/oracle/mysql-operator/pkg/version"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	constants "github.com/jkljajic/mysql-operator/pkg/constants"
+	"github.com/jkljajic/mysql-operator/pkg/controllers/util"
+	mysqlfake "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/fake"
+	informers "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions"
+	. "github.com/jkljajic/mysql-operator/pkg/util/test"
+	"github.com/jkljajic/mysql-operator/pkg/version"
 )
 
 const maxNumEventsPerTest = 10

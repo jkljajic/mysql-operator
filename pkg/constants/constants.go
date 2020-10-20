@@ -29,3 +29,6 @@ const ClusterRolePrimary = "primary"
 
 // ClusterRoleSecondary denotes a secondary InnoDB cluster member.
 const ClusterRoleSecondary = "secondary"
+
+// DefaultServiceSuffix denotes a sufficx tp se servkce InnoDB cluster member.
+const DefaultServiceSuffix = "-headless"

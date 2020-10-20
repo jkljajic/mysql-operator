@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
+	klog "k8s.io/klog/v2"
 	"github.com/pkg/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -35,14 +35,14 @@ import (
 	record "k8s.io/client-go/tools/record"
 	workqueue "k8s.io/client-go/util/workqueue"
 
-	restoreutil "github.com/oracle/mysql-operator/pkg/api/restore"
-	v1alpha1 "github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	clusterlabeler "github.com/oracle/mysql-operator/pkg/controllers/cluster/labeler"
-	controllerutils "github.com/oracle/mysql-operator/pkg/controllers/util"
-	clientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/typed/mysql/v1alpha1"
-	informersv1alpha1 "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
-	listersv1alpha1 "github.com/oracle/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
-	kubeutil "github.com/oracle/mysql-operator/pkg/util/kube"
+	restoreutil "github.com/jkljajic/mysql-operator/pkg/api/restore"
+	v1alpha1 "github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	clusterlabeler "github.com/jkljajic/mysql-operator/pkg/controllers/cluster/labeler"
+	controllerutils "github.com/jkljajic/mysql-operator/pkg/controllers/util"
+	clientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/typed/mysql/v1alpha1"
+	informersv1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
+	listersv1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
+	kubeutil "github.com/jkljajic/mysql-operator/pkg/util/kube"
 )
 
 const controllerAgentName = "operator-restore-controller"
@@ -100,9 +100,9 @@ func NewOperatorController(
 	podInformer corev1informers.PodInformer,
 ) *OperatorController {
 	// Create event broadcaster.
-	glog.V(4).Info("Creating event broadcaster")
+	klog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.Infof)
+	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
@@ -130,14 +130,14 @@ func NewOperatorController(
 
 				_, cond := restoreutil.GetRestoreCondition(&restore.Status, v1alpha1.RestoreScheduled)
 				if cond != nil && cond.Status == corev1.ConditionTrue {
-					glog.V(4).Infof("Restore %q is already scheduled on Cluster member %q",
+					klog.V(4).Infof("Restore %q is already scheduled on Cluster member %q",
 						kubeutil.NamespaceAndName(restore), restore.Spec.ScheduledMember)
 					return
 				}
 
 				key, err := cache.MetaNamespaceKeyFunc(restore)
 				if err != nil {
-					glog.Errorf("Error creating queue key, item not added to queue: %v", err)
+					klog.Errorf("Error creating queue key, item not added to queue: %v", err)
 					return
 				}
 				c.queue.Add(key)
@@ -155,7 +155,7 @@ func (controller *OperatorController) Run(ctx context.Context, numWorkers int) e
 	var wg sync.WaitGroup
 
 	defer func() {
-		glog.Info("Waiting for workers to finish their work")
+		klog.Info("Waiting for workers to finish their work")
 
 		controller.queue.ShutDown()
 
@@ -165,14 +165,14 @@ func (controller *OperatorController) Run(ctx context.Context, numWorkers int) e
 		// down the queue via defer and not at the end of the body.
 		wg.Wait()
 
-		glog.Info("All workers have finished")
+		klog.Info("All workers have finished")
 
 	}()
 
-	glog.Info("Starting OperatorController")
-	defer glog.Info("Shutting down OperatorController")
+	klog.Info("Starting OperatorController")
+	defer klog.Info("Shutting down OperatorController")
 
-	glog.Info("Waiting for caches to sync")
+	klog.Info("Waiting for caches to sync")
 	if !controllerutils.WaitForCacheSync(controllerAgentName, ctx.Done(),
 		controller.restoreListerSynced,
 		controller.clusterListerSynced,
@@ -180,7 +180,7 @@ func (controller *OperatorController) Run(ctx context.Context, numWorkers int) e
 		controller.podListerSynced) {
 		return errors.New("timed out waiting for caches to sync")
 	}
-	glog.Info("Caches are synced")
+	klog.Info("Caches are synced")
 
 	wg.Add(numWorkers)
 	for i := 0; i < numWorkers; i++ {
@@ -220,7 +220,7 @@ func (controller *OperatorController) processNextWorkItem() bool {
 		return true
 	}
 
-	glog.Errorf("Error in syncHandler, re-adding %q to queue: %+v", key, err)
+	klog.Errorf("Error in syncHandler, re-adding %q to queue: %+v", key, err)
 	// We had an error processing the item so add it back into the queue for
 	// re-processing with rate-limiting.
 	controller.queue.AddRateLimited(key)

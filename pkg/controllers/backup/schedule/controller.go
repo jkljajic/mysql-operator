@@ -35,14 +35,14 @@ import (
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/golang/glog"
+	klog "k8s.io/klog/v2"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
 
-	v1alpha1 "github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	mysqlop "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
-	opinformers "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
-	oplisters "github.com/oracle/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
+	v1alpha1 "github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	mysqlop "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
+	opinformers "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
+	oplisters "github.com/jkljajic/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
 )
 
 const controllerName = "backupschedule-controller"
@@ -75,9 +75,9 @@ func NewController(
 	syncPeriod time.Duration,
 	namespace string,
 ) *Controller {
-	glog.V(4).Info("Creating event broadcaster")
+	klog.Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.Infof)
+	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerName})
 
@@ -85,11 +85,11 @@ func NewController(
 		opClient:                   opClient,
 		backupScheduleLister:       backupScheduleInformer.Lister(),
 		backupScheduleListerSynced: backupScheduleInformer.Informer().HasSynced,
-		queue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "backupschedule"),
-		syncPeriod: syncPeriod,
-		clock:      clock.RealClock{},
-		namespace:  namespace,
-		recorder:   recorder,
+		queue:                      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "backupschedule"),
+		syncPeriod:                 syncPeriod,
+		clock:                      clock.RealClock{},
+		namespace:                  namespace,
+		recorder:                   recorder,
 	}
 
 	c.syncHandler = c.processSchedule
@@ -100,7 +100,7 @@ func NewController(
 				bs := obj.(*v1alpha1.BackupSchedule)
 				key, err := cache.MetaNamespaceKeyFunc(bs)
 				if err != nil {
-					glog.Errorf("Error creating queue key, item not added to queue: %v", err)
+					klog.Errorf("Error creating queue key, item not added to queue: %v", err)
 					return
 				}
 				c.queue.Add(key)
@@ -117,7 +117,7 @@ func (controller *Controller) Run(ctx context.Context, numWorkers int) error {
 	var wg sync.WaitGroup
 
 	defer func() {
-		glog.V(4).Info("Waiting for workers to finish their work")
+		klog.Info("Waiting for workers to finish their work")
 
 		controller.queue.ShutDown()
 
@@ -126,17 +126,17 @@ func (controller *Controller) Run(ctx context.Context, numWorkers int) error {
 		// we want to shut down the queue via defer and not at the end of the body.
 		wg.Wait()
 
-		glog.Info("All workers have finished")
+		klog.Info("All workers have finished")
 	}()
 
-	glog.V(4).Info("Starting backup schedule controller")
-	defer glog.Info("Shutting down backup schedule controller")
+	klog.Info("Starting backup schedule controller")
+	defer klog.Info("Shutting down backup schedule controller")
 
-	glog.V(2).Info("Waiting for backup schedule controller caches to sync")
+	klog.Info("Waiting for backup schedule controller caches to sync")
 	if !cache.WaitForCacheSync(ctx.Done(), controller.backupScheduleListerSynced) {
 		return errors.New("timed out waiting for backup schedule controller caches to sync")
 	}
-	glog.V(2).Info("Backup schedule controller caches are synced")
+	klog.Info("Backup schedule controller caches are synced")
 
 	wg.Add(numWorkers)
 	for i := 0; i < numWorkers; i++ {
@@ -155,14 +155,14 @@ func (controller *Controller) Run(ctx context.Context, numWorkers int) error {
 func (controller *Controller) enqueueAllEnabledSchedules() {
 	backupSchedules, err := controller.backupScheduleLister.BackupSchedules(controller.namespace).List(labels.NewSelector())
 	if err != nil {
-		glog.Errorf("Error listing BackupSchedules: %v", err)
+		klog.Errorf("Error listing BackupSchedules: %v", err)
 		return
 	}
 
 	for _, bs := range backupSchedules {
 		key, err := cache.MetaNamespaceKeyFunc(bs)
 		if err != nil {
-			glog.Errorf("Error creating queue key, item not added to queue: %v", err)
+			klog.Errorf("Error creating queue key, item not added to queue: %v", err)
 			continue
 		}
 		controller.queue.Add(key)
@@ -193,7 +193,7 @@ func (controller *Controller) processNextWorkItem() bool {
 		return true
 	}
 
-	glog.Errorf("Error in syncHandler, re-adding item to queue, key: %v, err: %v", key, err)
+	klog.Errorf("Error in syncHandler, re-adding item to queue, key: %v, err: %v", key, err)
 	// we had an error processing the item so add it back
 	// into the queue for re-processing with rate-limiting
 	controller.queue.AddRateLimited(key)
@@ -202,29 +202,29 @@ func (controller *Controller) processNextWorkItem() bool {
 }
 
 func (controller *Controller) processSchedule(key string) error {
-	glog.V(6).Infof("Running processSchedule: key: %s", key)
+	klog.Infof("Running processSchedule: key: %s", key)
 	ns, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return errors.Wrap(err, "error splitting queue key")
 	}
 
-	glog.V(6).Info("Getting backup schedule")
+	klog.Info("Getting backup schedule")
 	bs, err := controller.backupScheduleLister.BackupSchedules(ns).Get(name)
 	if err != nil {
 		// backup schedule no longer exists
 		if apierrors.IsNotFound(err) {
-			glog.Errorf("Backup schedule not found, err: %v", err)
+			klog.Errorf("Backup schedule not found, err: %v", err)
 			return nil
 		}
 		return errors.Wrap(err, "error getting BackupSchedule")
 	}
 
-	glog.V(6).Info("Cloning backup schedule")
+	klog.Info("Cloning backup schedule")
 	// don't modify items in the cache
 	bs = bs.DeepCopy().EnsureDefaults()
 	err = bs.Validate()
 	if err != nil {
-		glog.Errorf("Backup schedule validation failed, err: %v", err)
+		klog.Errorf("Backup schedule validation failed, err: %v", err)
 		controller.recorder.Event(bs, corev1.EventTypeWarning, "FailedValidation", err.Error())
 		return err
 	}
@@ -258,13 +258,13 @@ func parseCronSchedule(item *v1alpha1.BackupSchedule) (cron.Schedule, field.Erro
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				glog.Errorf("Panic parsing schedule: %v, r: %v", item.Spec.Schedule, r)
+				klog.Errorf("Panic parsing schedule: %v, r: %v", item.Spec.Schedule, r)
 				errs = append(errs, field.Invalid(fldPath, item.Spec.Schedule, "must be a valid Cron expression"))
 			}
 		}()
 
 		if res, err := cron.ParseStandard(item.Spec.Schedule); err != nil {
-			glog.Errorf("Error parsing schedule: %v, err: %v", item.Spec.Schedule, err)
+			klog.Errorf("Error parsing schedule: %v, err: %v", item.Spec.Schedule, err)
 			errs = append(errs, field.Invalid(fldPath, item.Spec.Schedule, "must be a valid Cron expression"))
 		} else {
 			schedule = res
@@ -285,13 +285,13 @@ func (controller *Controller) submitBackupIfDue(item *v1alpha1.BackupSchedule, c
 	)
 
 	if !isDue {
-		glog.V(4).Infof("Backup schedule %s[%s] is not due, skipping. nextRunTime: %v", item.Name, item.Spec.Schedule, nextRunTime)
+		klog.Infof("Backup schedule %s[%s] is not due, skipping. nextRunTime: %v", item.Name, item.Spec.Schedule, nextRunTime)
 		return nil
 	}
 
 	// Don't attempt to "catch up" if there are any missed or failed runs - simply
 	// trigger a Backup if it's time.
-	glog.Infof("Backup schedule %s[%s] is due, submitting Backup", item.Name, item.Spec.Schedule)
+	klog.Infof("Backup schedule %s[%s] is due, submitting Backup", item.Name, item.Spec.Schedule)
 	backup := getBackup(item, now)
 	if _, err := controller.opClient.MySQLV1alpha1().Backups(backup.Namespace).Create(backup); err != nil {
 		return errors.Wrap(err, "error creating Backup")

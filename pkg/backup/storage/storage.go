@@ -17,8 +17,8 @@ package storage
 import (
 	"io"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	"github.com/oracle/mysql-operator/pkg/backup/storage/s3"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/backup/storage/s3"
 )
 
 // Interface abstracts the underlying storage provider.

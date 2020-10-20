@@ -17,10 +17,10 @@ package v1alpha1
 import (
 	time "time"
 
-	mysql_v1alpha1 "github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	versioned "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/oracle/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
+	mysql_v1alpha1 "github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	versioned "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
+	internalinterfaces "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

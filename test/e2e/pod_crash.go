@@ -23,9 +23,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	mysqlclientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
-	"github.com/oracle/mysql-operator/test/e2e/framework"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	mysqlclientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
+	"github.com/jkljajic/mysql-operator/test/e2e/framework"
 )
 
 var _ = Describe("Pod crash", func() {

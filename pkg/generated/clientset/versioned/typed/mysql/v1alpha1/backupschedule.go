@@ -15,8 +15,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	scheme "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/scheme"
+	"context"
+
+	v1alpha1 "github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	scheme "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -64,7 +66,7 @@ func (c *backupSchedules) Get(name string, options v1.GetOptions) (result *v1alp
 		Resource("mysqlbackupschedules").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }
@@ -76,7 +78,7 @@ func (c *backupSchedules) List(opts v1.ListOptions) (result *v1alpha1.BackupSche
 		Namespace(c.ns).
 		Resource("mysqlbackupschedules").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }
@@ -88,7 +90,7 @@ func (c *backupSchedules) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Namespace(c.ns).
 		Resource("mysqlbackupschedules").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
+		Watch(context.Background())
 }
 
 // Create takes the representation of a backupSchedule and creates it.  Returns the server's representation of the backupSchedule, and an error, if there is any.
@@ -98,7 +100,7 @@ func (c *backupSchedules) Create(backupSchedule *v1alpha1.BackupSchedule) (resul
 		Namespace(c.ns).
 		Resource("mysqlbackupschedules").
 		Body(backupSchedule).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }
@@ -111,7 +113,7 @@ func (c *backupSchedules) Update(backupSchedule *v1alpha1.BackupSchedule) (resul
 		Resource("mysqlbackupschedules").
 		Name(backupSchedule.Name).
 		Body(backupSchedule).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }
@@ -123,7 +125,7 @@ func (c *backupSchedules) Delete(name string, options *v1.DeleteOptions) error {
 		Resource("mysqlbackupschedules").
 		Name(name).
 		Body(options).
-		Do().
+		Do(context.Background()).
 		Error()
 }
 
@@ -134,7 +136,7 @@ func (c *backupSchedules) DeleteCollection(options *v1.DeleteOptions, listOption
 		Resource("mysqlbackupschedules").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
-		Do().
+		Do(context.Background()).
 		Error()
 }
 
@@ -147,7 +149,7 @@ func (c *backupSchedules) Patch(name string, pt types.PatchType, data []byte, su
 		SubResource(subresources...).
 		Name(name).
 		Body(data).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }

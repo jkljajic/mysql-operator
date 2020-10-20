@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-agent
+---
+# Source: mysql-operator/templates/02-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: mysql-agent
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs:
+    - get
+    - list
+    - patch
+    - update
+    - watch
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs:
+    - create
+    - update
+    - patch
+  - apiGroups: ["mysql.oracle.com"]
+    resources:
+    - mysqlbackups
+    - mysqlbackupschedules
+    - mysqlclusters
+    - mysqlclusters/finalizers
+    - mysqlrestores
+    verbs:
+    - get
+    - list
+    - patch
+    - update
+    - watch
+
+---
+# Source: mysql-operator/templates/02-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind:  ClusterRoleBinding
+metadata:
+  name: mysql-agent
+  namespace: mysql-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind:  ClusterRole
+  name: mysql-agent
+subjects:
+- kind: ServiceAccount
+  name: mysql-agent
+  namespace: mysql-operation
+
+---
+apiVersion: mysql.oracle.com/v1alpha1
+kind: Cluster
+metadata:
+  name: mysql-server
+spec:
+  version: 8.0.19
+  multiMaster: true
+  members: 3
+  rootPasswordSecret:
+    name: mysql-server-root-password 
+  sslSecret:
+    name: mysql-ssl-secret
+  #config:
+  #  name: mysql-cnf
+  nodeSelector:
+    agentpool: mysql
+  #imagePullSecrets:
+  #securityContext: 
+  #affinity:
+  volumeClaimTemplate:
+    metadata:
+      name: data
+    spec:
+#      storageClassName: manual
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Gi
+      volumeMode: Filesystem
+
+  #backupVolumeClaimTemplate:
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-ssl-secret
+type: Opaque
+data:
+  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCakNDQWU2Z0F3SUJBZ0lCQVRBTkJna3Foa2lHOXcwQkFRc0ZBREE4TVRvd09BWURWUVFERERGTmVWTlIKVEY5VFpYSjJaWEpmT0M0d0xqRTVYMEYxZEc5ZlIyVnVaWEpoZEdWa1gwTkJYME5sY25ScFptbGpZWFJsTUI0WApEVEl3TURReU1qRTRNRE14TTFvWERUTXdNRFF5TURFNE1ETXhNMW93UERFNk1EZ0dBMVVFQXd3eFRYbFRVVXhmClUyVnlkbVZ5WHpndU1DNHhPVjlCZFhSdlgwZGxibVZ5WVhSbFpGOURRVjlEWlhKMGFXWnBZMkYwWlRDQ0FTSXcKRFFZSktvWklodmNOQVFFQkJRQURnZ0VQQURDQ0FRb0NnZ0VCQU5JTWtTUHdPd3BxZ1VKK0Q3T0I5ek9ZZ2Fxdgo3cnFET2dtYWxtNy9mNis1SmNrY2RPOFk1OVRhOFJVRHNtaTFMUmp5QndsMlFEQU1OdFVBc0FEcVBDcDI0aDFWCnBzWGlHU1B6NjNFUm9CbVZaQXdld0FjcVdkRVJnLzRpZTJaVjBUK1dzN204d2dXZW1hYVVJbllPMDV0WUJjZjYKV3dOenpXVDZKWmhzM1RGK1htS3duMHJXYkJ4bVVUU0t5WTgxdUUxMUhHVnRRV2xkM0FOeTZOc1JNMDJSTzYrdQpncndWWm1DY3NaeEdqUjY0MG5CWnBkWC9oOGcwZ0RRS0taZThTUmF5NzhxSFRmaTJxKzN2Sk1ETityTUs2RFllCnJBRUgwdzBlWU84VmdZRVlvMS9jMzVuVHp0TjN2Nk04S09wdzZjM2pxTHc0d28wZGZFQ1AzWG5LcGlzQ0F3RUEKQWFNVE1CRXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QU5CZ2txaGtpRzl3MEJBUXNGQUFPQ0FRRUFJVGx4R1lmawpsU2htSW8ybU1hTHk0cUVtTXdwVEEvQ2J6N205VHJZMFhFUTRZQ0lteXhzVHJQQ29BWEY0QjBVWkZIUHc3VzZqCkJKTVZ6b0p2MHNQcnE3L01qN3pvSmtWOFNya05vNXdYVmptVkVQdUMzNVcvbmdlcitJYWJ5MG51MmljU01Gb0kKU3Z0QldyTjhMYXFGenB6MDdPaU9ESEp0SzZrWTBBQzVqMU5Edy8rR2VKWGlEV2sybWVJbFR1MWRPbHk1dk5TNwpMY3hsa1A0TFFKWm4ydmNwSmk3SHFDbjlWQ29GUFh3OXlJQW1XWFFBdzJhMzBVODhJQWVrU1JFUTAraTVpZi9PCjZES1cwZG9KMEpwWi9HU1dZZFIwN2VqN2FpdFlYYnNNWHpHUThULzA0TnJqTGE5QXJ3bkVBblBUQkZzQnE3WXEKTWtrM3lOWW41M1JDZ0E9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCgA=
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCekNDQWUrZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREE4TVRvd09BWURWUVFERERGTmVWTlIKVEY5VFpYSjJaWEpmT0M0d0xqRTVYMEYxZEc5ZlIyVnVaWEpoZEdWa1gwTkJYME5sY25ScFptbGpZWFJsTUI0WApEVEl3TURReU1qRTRNRE14TTFvWERUTXdNRFF5TURFNE1ETXhNMW93UURFK01Ed0dBMVVFQXd3MVRYbFRVVXhmClUyVnlkbVZ5WHpndU1DNHhPVjlCZFhSdlgwZGxibVZ5WVhSbFpGOVRaWEoyWlhKZlEyVnlkR2xtYVdOaGRHVXcKZ2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRRFRTTlJzMmg5b2h5VkJveXBjbStHZwpjWVB3TlA5bElIajhsNjhhSUQwVTNBaG5zMjcvQmFUd1JTb1hsaVFXendwQkNaMUkrZ1VpY0xjaUU1RXJXcHVNClBGblhBeW1UaGZLZkpVeHI5SmVueE41K0ZWMWNZRm4yNGQ5aGNtUmlvOVNDMCtBTi9TOTkzQXN5Z1ZwdlQvNlcKT1Vud3BVeXh1ZzZpN2Q3Z2dNTVM0NlFPVTFrYW9IL3FsazBHcUVXWjlPY2lGMUtFaVJhY0UyemNMTGZ0eks4NApMaXhVNUFObU5TSWZnQ0Rrd0R6aXNOYlVIRXFUNVlONkNmYmhmRVZvdUo0SkhMREpFVk9mVTBoL21hdExkcElSCllPTTZBQ1dJWllqbVV6Nm80ajJLdFJTNm5BWmJsYzhpeW1GZmJreGVCcGJNdllTZzZ6Z25JYldkQzBObjlobzkKQWdNQkFBR2pFREFPTUF3R0ExVWRFd0VCL3dRQ01BQXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBSzYwOGo1OQo1NWlHRlhUY2tHYm5QQVZGZzFFRzU2MkYwNnNreitPVVA1czUzU1RXWHF6aXJrbUVNWm13TTV2ZTlMZmRPY1RPCnA1cnNrbWFoZTMwbDk0bElyOHVTYmV6RnhYR1M3bVI2QWw4bzEweEFZQzlRUmt3ZXRwOFcwOXBoOG9rRU00Y0sKcFdpd0laWTl0Y1Rzb2grNy9BVHR1alJBUVJTMTdHa0J1WC9STlpzbGJRcXN2TStlbUdYeFNwUVJ3cDdER3U2awpKbmZVVU1GSDMrdDVSdTVYUDNwb2ZXektMUnVxYjB0eHdJdkFjSkt5czlOdEsrODhleTlGNmExbXEzZDhGZVoyCjJrQTU5U0V4cERXMzJDek9RZnRMV3kvalVmUVNpNER6T1JFWENJS2tuSVBRM0k2OHc0SnlKSG5lVG8xSTYvYW0KVUEwNXNYcXVLM1hoK29VPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCgA=
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBMDBqVWJOb2ZhSWNsUWFNcVhKdmhvSEdEOERUL1pTQjQvSmV2R2lBOUZOd0laN051Ci93V2s4RVVxRjVZa0ZzOEtRUW1kU1BvRkluQzNJaE9SSzFxYmpEeFoxd01wazRYeW55Vk1hL1NYcDhUZWZoVmQKWEdCWjl1SGZZWEprWXFQVWd0UGdEZjB2ZmR3TE1vRmFiMC8rbGpsSjhLVk1zYm9Pb3UzZTRJRERFdU9rRGxOWgpHcUIvNnBaTkJxaEZtZlRuSWhkU2hJa1duQk5zM0N5MzdjeXZPQzRzVk9RRFpqVWlINEFnNU1BODRyRFcxQnhLCmsrV0RlZ24yNFh4RmFMaWVDUnl3eVJGVG4xTklmNW1yUzNhU0VXRGpPZ0FsaUdXSTVsTStxT0k5aXJVVXVwd0cKVzVYUElzcGhYMjVNWGdhV3pMMkVvT3M0SnlHMW5RdERaL1lhUFFJREFRQUJBb0lCQUdZTW1UMXlKUlZ4b1JjUQozaGNZMjJPSk1IYkd3a3h2NEwvdjY0MHM0UlBBS3ZjYmZaTURnT1RrSXk1OVFEVWNEeEhXdVBkVWUwSmxPcTdrCjBJc21HbGNqbHlqNHlBNE85bDdUdnhPdGNjcUFsZzVEOTNIMHY3ODAzWlhOa0pyc0VtcVdOM1BLUkRRQUloQmsKMWU5SnJlZVZDQmVKWDMvQUkrMmlBckpndnRmUjVySnpYR3NkSlZ4SldzZXVlRlJ1dklURVNiaHFPc3RQdHR3YQpkVE5oNWd4cEZobC9sMEdqTzZMV2pWVlVJL3piQkY0WVZTOG5QclFvTTgrWmMzN3RqN3RmTnNYQVFOVGNGNVlFCkpDb1ZrRkFmZ3RuOEwwaHNlR1UwVFdzS1hTZWdubzF1dnhhYlpVU3dmcjZqd3hiVmlSeFFPeUdlaGV3T0x4bFMKd1BpTGVBRUNnWUVBOCtZVTE2cGtQd1ZBMGVoU2R0bUlPT1B3NEcveE5zRERIbXFQLzZXVFJtQ1lwSG0zTm54ZQo3clFhQnpTSjZMYUd5WVFwRlB4aUxUcFpHRlQ0MmxCRFhKeUhpNWpsekcxTWYxYVVtbHZSeTlRbXdhZ05IMUVWCmJZZlVMY29XK2xKcjVsRmYwdU5nNXF6VTZYbXBYWUJvK3NZVWtINm5JcFRuSlZmanVYaElHd0VDZ1lFQTNjUisKUG13SWpnR1J5ZGwzOCtYb3lHcnl0dUg3Z0lKcGtmbTJsdEZNTFZEbkhOckJ5QUNqclNhejJnWmhUNTZMZ3hLYgo4NTVlSXNUWitGRXNkQW1GSWt2Tis0LzNNcGQ3NzltRnZHZUFkV0luNE1Mckl3am92aVBDZWxIWkJwelVzREt1CjFBcjlhYnJWWGFMeVdyY010eHFnQjVQSXZQNHB0MVlqcDRxK3F6MENnWUJuTCsyYmZOUmlzVWRHUjRNMEV6NkYKeXpJcTBsRjhON3VWVDhKU2gydXl0OFY4dUo0aDZDYUYyUjYxODYxeERtQWlPODdodVJHVVR2NUl4Qkp3MHNwZApFVUJyZUNtby9va0J5dENlS2NDdCtyalc3OUYxY1dtZWFId0ZUMTIvVkVXZ01NZFl3cWhKajgrWVk4ZWE3bXY3CnhQZ0lWZjFDTFR0SjJsQlhOS05WQVFLQmdCaStJNWV6VmdFQ0M5SUpnV2lrN2lQdVNzWTgwR0syS2pFdk96LzQKZWhkVVAzVG9zMVl0UEJYRmk2dDNxc1BIWEtsekdoTkVTQng0K2hqS2RiczhsSzRPNXh4Nkk0cHhmRkoyWW9WeQp4dEpSOFVFU2ZrbWFaTjFTQUJERnNRRWIzbDhLU0pjLzRxWTVRalVBU1NuMTRtVkxneTlWUGNCWVd5OHBYVEVFCk9lSEJBb0dCQUlVYk9MSzIwcmtDSjdCMnVDdmRTNEtXcDQyYXpmbkx3bGV1UmxTanE4Q08vQUwwMGlaWXI2dUcKZ09ORkgySXRmN2RmWnQwUytoMmRJbnpwYU5QNUxBcVhnY2xuWEczaVJVeG5YcmJGU29zaTVtNVl5VFltNWJ5UgpFQXFjNXRHZnZ2elpMeVc1UkROd1MzM1NSaEhXNERhejR6VGRmd0hDK3g5NDh1NUIvL21CCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCgA=
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-server-root-password
+type: Opaque
+data:
+  password: U0dJOGMwRE5RWUVQM3Mwbw==
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-cnf
+data:
+ client.cnf: |-
+    # MySQL command-line client options
+    [mysql]
+    prompt="innodb> "

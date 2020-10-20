@@ -25,10 +25,10 @@ import (
 	fake "k8s.io/client-go/kubernetes/fake"
 	testingutil "k8s.io/client-go/testing"
 
-	cluster "github.com/oracle/mysql-operator/pkg/cluster"
-	innodb "github.com/oracle/mysql-operator/pkg/cluster/innodb"
-	constants "github.com/oracle/mysql-operator/pkg/constants"
-	controllerutil "github.com/oracle/mysql-operator/pkg/controllers/util"
+	cluster "github.com/jkljajic/mysql-operator/pkg/cluster"
+	innodb "github.com/jkljajic/mysql-operator/pkg/cluster/innodb"
+	constants "github.com/jkljajic/mysql-operator/pkg/constants"
+	controllerutil "github.com/jkljajic/mysql-operator/pkg/controllers/util"
 )
 
 func alwaysReady() bool { return true }

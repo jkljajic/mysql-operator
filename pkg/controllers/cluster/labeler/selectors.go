@@ -18,7 +18,7 @@ import (
 	labels "k8s.io/apimachinery/pkg/labels"
 	selection "k8s.io/apimachinery/pkg/selection"
 
-	constants "github.com/oracle/mysql-operator/pkg/constants"
+	constants "github.com/jkljajic/mysql-operator/pkg/constants"
 )
 
 // PrimarySelector returns a label selector that selects only primaries of a

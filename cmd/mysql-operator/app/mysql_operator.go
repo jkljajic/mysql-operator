@@ -21,22 +21,22 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
-	"github.com/prometheus/client_golang/prometheus"
+	klog "k8s.io/klog/v2"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
-	backupcontroller "github.com/oracle/mysql-operator/pkg/controllers/backup"
-	backupschedule "github.com/oracle/mysql-operator/pkg/controllers/backup/schedule"
-	cluster "github.com/oracle/mysql-operator/pkg/controllers/cluster"
-	restorecontroller "github.com/oracle/mysql-operator/pkg/controllers/restore"
-	clientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
-	informers "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions"
-	operatoropts "github.com/oracle/mysql-operator/pkg/options/operator"
-	metrics "github.com/oracle/mysql-operator/pkg/util/metrics"
-	signals "github.com/oracle/mysql-operator/pkg/util/signals"
+	backupcontroller "github.com/jkljajic/mysql-operator/pkg/controllers/backup"
+	backupschedule "github.com/jkljajic/mysql-operator/pkg/controllers/backup/schedule"
+	cluster "github.com/jkljajic/mysql-operator/pkg/controllers/cluster"
+	restorecontroller "github.com/jkljajic/mysql-operator/pkg/controllers/restore"
+	clientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
+	informers "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions"
+	operatoropts "github.com/jkljajic/mysql-operator/pkg/options/operator"
+	metrics "github.com/jkljajic/mysql-operator/pkg/util/metrics"
+	signals "github.com/jkljajic/mysql-operator/pkg/util/signals"
 )
 
 const (
@@ -62,7 +62,7 @@ func Run(s *operatoropts.MySQLOperatorOpts) error {
 	// Initialise the operator metrics.
 	metrics.RegisterPodName(s.Hostname)
 	cluster.RegisterMetrics()
-	http.Handle("/metrics", prometheus.Handler())
+	http.Handle("/metrics", promhttp.Handler())
 	go http.ListenAndServe(metricsEndpoint, nil)
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -84,7 +84,7 @@ func Run(s *operatoropts.MySQLOperatorOpts) error {
 		mysqlopClient,
 		kubeClient,
 		operatorInformerFactory.MySQL().V1alpha1().Clusters(),
-		kubeInformerFactory.Apps().V1beta1().StatefulSets(),
+		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Core().V1().Pods(),
 		kubeInformerFactory.Core().V1().Services(),
 		30*time.Second,
@@ -142,7 +142,7 @@ func Run(s *operatoropts.MySQLOperatorOpts) error {
 
 	<-ctx.Done()
 
-	glog.Info("Waiting for all controllers to shut down gracefully")
+	klog.Info("Waiting for all controllers to shut down gracefully")
 	wg.Wait()
 
 	return nil

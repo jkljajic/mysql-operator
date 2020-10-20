@@ -15,20 +15,27 @@
 package v1alpha1
 
 import (
-	"github.com/oracle/mysql-operator/pkg/constants"
-	"github.com/oracle/mysql-operator/pkg/version"
+	"github.com/jkljajic/mysql-operator/pkg/constants"
+	"github.com/jkljajic/mysql-operator/pkg/version"
 )
 
 const (
 	// DefaultVersion is the MySQL version to use if not specified explicitly by user
-	DefaultVersion      = "8.0.12"
+	DefaultVersion      = "8.0.21"
 	defaultMembers      = 3
 	defaultBaseServerID = 1000
+	defaultLogLevel     = 4
 	// maxBaseServerID is the maximum safe value for BaseServerID calculated
 	// as max MySQL server_id value - max Replication Group size.
 	maxBaseServerID uint32 = 4294967295 - 9
 	// MysqlServer is the image to use if no image is specified explicitly by the user.
 	MysqlServer = "mysql/mysql-server"
+	// ServiceAccountName is default value for service account name
+	ServiceAccountName = "mysql-agent"
+
+	PodManagementPolicy = "OrderedReady"
+
+	ClusterName = "Cluster"
 )
 
 const (
@@ -69,6 +76,17 @@ func (c *Cluster) EnsureDefaults() *Cluster {
 		c.Spec.Version = DefaultVersion
 	}
 
+	if c.Spec.ServiceAccountName == "" {
+		c.Spec.ServiceAccountName = ServiceAccountName
+	}
+	if c.Spec.PodManagementPolicy == "" {
+		c.Spec.PodManagementPolicy = PodManagementPolicy
+	}
+
+	if c.Spec.ClusterName == "" {
+		c.Spec.ClusterName = ClusterName
+	}
+
 	return c
 }
 
@@ -87,6 +105,28 @@ func (c *Cluster) RequiresConfigMount() bool {
 // for a MySQL cluster else false
 func (c *Cluster) RequiresSecret() bool {
 	return c.Spec.RootPasswordSecret == nil
+}
+
+// RequiresServicePrimary returns true if Multimaster is false
+// for a MySQL cluster else false
+func (c *Cluster) RequiresServicePrimary() bool {
+	return !c.Spec.MultiMaster
+}
+
+// GetServiceHeadlessName returns name of service based on cluster name
+// for a MySQL cluster
+func (c *Cluster) GetServiceHeadlessName() string {
+	return c.Name + constants.DefaultServiceSuffix
+}
+
+// GetServiceName returns name of service based on cluster name
+// for a MySQL cluster
+func (c *Cluster) GetServiceName() string {
+	return c.Name
+}
+
+func (c *Cluster) RequiresReplicationGroupName() bool {
+	return c.Spec.ReplicationGroupName != ""
 }
 
 // RequiresCustomSSLSetup returns true is the user has provided a secret

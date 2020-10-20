@@ -36,7 +36,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	uexec "k8s.io/utils/exec"
 
-	"github.com/oracle/mysql-operator/test/e2e/framework/ginkgowrapper"
+	"github.com/jkljajic/mysql-operator/test/e2e/framework/ginkgowrapper"
 )
 
 func nowStamp() string {

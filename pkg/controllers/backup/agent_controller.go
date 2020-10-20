@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
+	klog "k8s.io/klog/v2"
 	"github.com/pkg/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -37,16 +37,16 @@ import (
 	record "k8s.io/client-go/tools/record"
 	workqueue "k8s.io/client-go/util/workqueue"
 
-	backuputil "github.com/oracle/mysql-operator/pkg/api/backup"
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	backuphandler "github.com/oracle/mysql-operator/pkg/backup"
-	executor "github.com/oracle/mysql-operator/pkg/backup/executor"
-	controllerutils "github.com/oracle/mysql-operator/pkg/controllers/util"
-	clientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/typed/mysql/v1alpha1"
-	informersv1alpha1 "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
-	listersv1alpha1 "github.com/oracle/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
-	kubeutil "github.com/oracle/mysql-operator/pkg/util/kube"
-	metrics "github.com/oracle/mysql-operator/pkg/util/metrics"
+	backuputil "github.com/jkljajic/mysql-operator/pkg/api/backup"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	backuphandler "github.com/jkljajic/mysql-operator/pkg/backup"
+	executor "github.com/jkljajic/mysql-operator/pkg/backup/executor"
+	controllerutils "github.com/jkljajic/mysql-operator/pkg/controllers/util"
+	clientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/typed/mysql/v1alpha1"
+	informersv1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
+	listersv1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
+	kubeutil "github.com/jkljajic/mysql-operator/pkg/util/kube"
+	metrics "github.com/jkljajic/mysql-operator/pkg/util/metrics"
 )
 
 const agentControllerAgentName = "agent-backup-controller"
@@ -100,9 +100,9 @@ func NewAgentController(
 	podName string,
 ) *AgentController {
 	// Create event broadcaster.
-	glog.V(4).Info("Creating event broadcaster")
+	klog.Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.Infof)
+	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: agentControllerAgentName})
 
@@ -130,12 +130,12 @@ func NewAgentController(
 
 				_, cond := backuputil.GetBackupCondition(&new.Status, v1alpha1.BackupComplete)
 				if cond != nil && cond.Status == corev1.ConditionTrue {
-					glog.V(2).Infof("Backup %q is Complete, skipping.", kubeutil.NamespaceAndName(new))
+					klog.Infof("Backup %q is Complete, skipping.", kubeutil.NamespaceAndName(new))
 					return
 				}
 				_, cond = backuputil.GetBackupCondition(&new.Status, v1alpha1.BackupRunning)
 				if cond != nil && cond.Status == corev1.ConditionTrue {
-					glog.V(2).Infof("Backup %q is Running, skipping.", kubeutil.NamespaceAndName(new))
+					klog.Infof("Backup %q is Running, skipping.", kubeutil.NamespaceAndName(new))
 					return
 				}
 
@@ -143,14 +143,14 @@ func NewAgentController(
 				if cond != nil && cond.Status == corev1.ConditionTrue && new.Spec.ScheduledMember == c.podName {
 					key, err := cache.MetaNamespaceKeyFunc(new)
 					if err != nil {
-						glog.Errorf("Error creating queue key, item not added to queue: %v", err)
+						klog.Errorf("Error creating queue key, item not added to queue: %v", err)
 						return
 					}
 					c.queue.Add(key)
-					glog.V(2).Infof("Backup %q queued", kubeutil.NamespaceAndName(new))
+					klog.Infof("Backup %q queued", kubeutil.NamespaceAndName(new))
 					return
 				}
-				glog.V(2).Infof("Backup %q is not Scheduled, skipping.", kubeutil.NamespaceAndName(new))
+				klog.Infof("Backup %q is not Scheduled, skipping.", kubeutil.NamespaceAndName(new))
 
 			},
 		},
@@ -166,7 +166,7 @@ func (controller *AgentController) Run(ctx context.Context, numWorkers int) erro
 	var wg sync.WaitGroup
 
 	defer func() {
-		glog.Info("Waiting for workers to finish their work")
+		klog.Info("Waiting for workers to finish their work")
 
 		controller.queue.ShutDown()
 
@@ -176,21 +176,21 @@ func (controller *AgentController) Run(ctx context.Context, numWorkers int) erro
 		// down the queue via defer and not at the end of the body.
 		wg.Wait()
 
-		glog.Info("All workers have finished")
+		klog.Info("All workers have finished")
 
 	}()
 
-	glog.Info("Starting AgentController")
-	defer glog.Info("Shutting down AgentController")
+	klog.Info("Starting AgentController")
+	defer klog.Info("Shutting down AgentController")
 
-	glog.Info("Waiting for caches to sync")
+	klog.Info("Waiting for caches to sync")
 	if !controllerutils.WaitForCacheSync(agentControllerAgentName, ctx.Done(),
 		controller.clusterListerSynced,
 		controller.backupListerSynced,
 		controller.podListerSynced) {
 		return errors.New("timed out waiting for caches to sync")
 	}
-	glog.Info("Caches are synced")
+	klog.Info("Caches are synced")
 
 	wg.Add(numWorkers)
 	for i := 0; i < numWorkers; i++ {
@@ -230,7 +230,7 @@ func (controller *AgentController) processNextWorkItem() bool {
 		return true
 	}
 
-	glog.Errorf("Error in syncHandler, re-adding %q to queue: %+v", key, err)
+	klog.Errorf("Error in syncHandler, re-adding %q to queue: %+v", key, err)
 	// We had an error processing the item so add it back into the queue for
 	// re-processing with rate-limiting.
 	controller.queue.AddRateLimited(key)
@@ -275,7 +275,7 @@ func (controller *AgentController) processBackup(key string) error {
 		}
 
 		// TODO(apryde) when we have more storage providers this will need to be abstracted away.
-		creds, err = controller.kubeClient.CoreV1().Secrets(ns).Get(backup.Spec.StorageProvider.S3.CredentialsSecret.Name, metav1.GetOptions{})
+		creds, err = controller.kubeClient.CoreV1().Secrets(ns).Get(context.Background(), backup.Spec.StorageProvider.S3.CredentialsSecret.Name, metav1.GetOptions{})
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				return errors.Wrap(err, "getting backup credentials secret")
@@ -377,7 +377,7 @@ func (controller *AgentController) performBackup(backup *v1alpha1.Backup, creds 
 	}
 
 	metrics.IncEventCounter(clusterBackupCount)
-	glog.Infof("Backup %q succeeded in %v", backup.Name, finished.Sub(started))
+	klog.Infof("Backup %q succeeded in %v", backup.Name, finished.Sub(started))
 	controller.recorder.Event(backup, corev1.EventTypeNormal, "Complete", "Backup complete")
 
 	return nil

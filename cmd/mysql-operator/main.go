@@ -19,15 +19,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/golang/glog"
 	"github.com/spf13/pflag"
-	utilflag "k8s.io/apiserver/pkg/util/flag"
+	utilflag "k8s.io/component-base/cli/flag"
+	"k8s.io/klog/v2"
 
-	"k8s.io/apiserver/pkg/util/logs"
-
-	"github.com/oracle/mysql-operator/cmd/mysql-operator/app"
-	operatoropts "github.com/oracle/mysql-operator/pkg/options/operator"
-	"github.com/oracle/mysql-operator/pkg/version"
+	"github.com/jkljajic/mysql-operator/cmd/mysql-operator/app"
+	operatoropts "github.com/jkljajic/mysql-operator/pkg/options/operator"
+	"github.com/jkljajic/mysql-operator/pkg/version"
 )
 
 const (
@@ -36,13 +34,14 @@ const (
 )
 
 func main() {
+	klog.InitFlags(nil)
 	fmt.Fprintf(os.Stderr, "Starting mysql-operator version '%s'\n", version.GetBuildVersion())
-
 	opts, err := operatoropts.NewMySQLOperatorOpts(configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error reading config: %v\n", err)
 		os.Exit(1)
 	}
+	defer klog.Flush()
 
 	opts.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(utilflag.WordSepNormalizeFunc)
@@ -50,11 +49,8 @@ func main() {
 	pflag.Parse()
 	goflag.CommandLine.Parse([]string{})
 
-	logs.InitLogs()
-	defer logs.FlushLogs()
-
 	pflag.VisitAll(func(flag *pflag.Flag) {
-		glog.V(2).Infof("FLAG: --%s=%q", flag.Name, flag.Value)
+		klog.V(6).Infof("FLAG: --%s=%q", flag.Name, flag.Value)
 	})
 
 	if err := app.Run(opts); err != nil {

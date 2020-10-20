@@ -80,7 +80,7 @@ spec:
         - name: mysql-operator-config-volume
           mountPath: /etc/mysql-operator
         args:
-          - --v=4
+          - -v=4
 {{- if not .Values.operator.global }}
           - --namespace={{- .Values.operator.namespace }}
 {{- end }}

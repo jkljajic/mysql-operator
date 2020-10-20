@@ -27,9 +27,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 
-	restoreutil "github.com/oracle/mysql-operator/pkg/api/restore"
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	mysqlclientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
+	restoreutil "github.com/jkljajic/mysql-operator/pkg/api/restore"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	mysqlclientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
 )
 
 // RestoreTestJig is a jig to help Restore testing.

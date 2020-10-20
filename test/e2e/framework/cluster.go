@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	apps "k8s.io/api/apps/v1beta1"
-	"k8s.io/api/core/v1"
+	apps "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -32,12 +32,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/pkg/errors"
 
-	clusterutil "github.com/oracle/mysql-operator/pkg/api/cluster"
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	"github.com/oracle/mysql-operator/pkg/controllers/cluster/labeler"
-	mysqlclientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
-	"github.com/oracle/mysql-operator/pkg/resources/secrets"
-	"github.com/oracle/mysql-operator/pkg/resources/statefulsets"
+	clusterutil "github.com/jkljajic/mysql-operator/pkg/api/cluster"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/controllers/cluster/labeler"
+	mysqlclientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
+	"github.com/jkljajic/mysql-operator/pkg/resources/secrets"
+	"github.com/jkljajic/mysql-operator/pkg/resources/statefulsets"
 )
 
 // TestDBName is the name of database to use when executing test SQL queries.
@@ -150,7 +150,7 @@ func (j *ClusterTestJig) WaitForClusterUpgradedOrFail(namespace, name, version s
 	Logf("Waiting up to %v for Cluster \"%s/%s\" to be upgraded", timeout, namespace, name)
 
 	cluster := j.WaitForConditionOrFail(namespace, name, timeout, "be upgraded ", func(cluster *v1alpha1.Cluster) bool {
-		set, err := j.KubeClient.AppsV1beta1().StatefulSets(cluster.Namespace).Get(cluster.Name, metav1.GetOptions{})
+		set, err := j.KubeClient.AppsV1().StatefulSets(cluster.Namespace).Get(cluster.Name, metav1.GetOptions{})
 		if err != nil {
 			Failf("Failed to get StatefulSet %[1]q for Cluster %[1]q: %[2]v", name, err)
 		}
@@ -189,7 +189,7 @@ func (j *ClusterTestJig) WaitForClusterUpgradedOrFail(namespace, name, version s
 func (j *ClusterTestJig) waitForSSState(ss *apps.StatefulSet, until func(*apps.StatefulSet, *v1.PodList) (bool, error)) {
 	pollErr := wait.PollImmediate(Poll, DefaultTimeout,
 		func() (bool, error) {
-			ssGet, err := j.KubeClient.AppsV1beta1().StatefulSets(ss.Namespace).Get(ss.Name, metav1.GetOptions{})
+			ssGet, err := j.KubeClient.AppsV1().StatefulSets(ss.Namespace).Get(ss.Name, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
@@ -235,7 +235,7 @@ func (j *ClusterTestJig) waitForSSRollingUpdate(set *apps.StatefulSet) *apps.Sta
 // our expectations.
 func (j *ClusterTestJig) SanityCheckCluster(cluster *v1alpha1.Cluster) {
 	name := types.NamespacedName{Namespace: cluster.Namespace, Name: cluster.Name}
-	ss, err := j.KubeClient.AppsV1beta1().StatefulSets(cluster.Namespace).Get(cluster.Name, metav1.GetOptions{})
+	ss, err := j.KubeClient.AppsV1().StatefulSets(cluster.Namespace).Get(cluster.Name, metav1.GetOptions{})
 	if err != nil {
 		Failf("Failed to get StatefulSet %[1]q for Cluster %[1]q: %[2]v", name, err)
 	}

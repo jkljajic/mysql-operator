@@ -17,19 +17,17 @@ func TestOptionsToString(t *testing.T) {
 		{
 			name: "string_only",
 			in: Options{
-				"memberSslMode": "DISABLED",
-				"ipWhitelist":   "10.0.0.0/8",
+				"ipWhitelist": "10.0.0.0/8",
 			},
-			out: "{'memberSslMode': 'DISABLED', 'ipWhitelist': '10.0.0.0/8'}",
+			out: "{ 'ipWhitelist': '10.0.0.0/8'}",
 		}, {
 			name: "with_bool",
 			in: Options{
-				"memberSslMode": "DISABLED",
-				"ipWhitelist":   "10.0.0.0/8",
-				"force":         "True",
-				"multiMaster":   "True",
+				"ipWhitelist": "10.0.0.0/8",
+				"force":       "True",
+				"multiMaster": "True",
 			},
-			out: "{'memberSslMode': 'DISABLED', 'ipWhitelist': '10.0.0.0/8', 'force': True, 'multiMaster': True}",
+			out: "{ 'ipWhitelist': '10.0.0.0/8', 'force': True, 'multiMaster': True}",
 		},
 	}
 

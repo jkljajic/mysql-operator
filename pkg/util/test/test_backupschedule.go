@@ -20,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
 )
 
 type TestBackupSchedule struct {

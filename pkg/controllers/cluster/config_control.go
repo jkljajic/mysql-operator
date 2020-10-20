@@ -15,8 +15,11 @@
 package cluster
 
 import (
-	"k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
+	"context"
+
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubernetes "k8s.io/client-go/kubernetes"
 )
 
 // ConfigMapControlInterface defines the interface that the
@@ -37,6 +40,6 @@ func NewRealConfigMapControl(client kubernetes.Interface) ConfigMapControlInterf
 }
 
 func (rsc *realConfigMapControl) CreateConfigMap(c *v1.ConfigMap) error {
-	_, err := rsc.client.CoreV1().ConfigMaps(c.Namespace).Create(c)
+	_, err := rsc.client.CoreV1().ConfigMaps(c.Namespace).Create(context.Background(), c, metav1.CreateOptions{})
 	return err
 }

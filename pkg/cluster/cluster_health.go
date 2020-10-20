@@ -20,7 +20,7 @@ import (
 	"github.com/heptiolabs/healthcheck"
 	"github.com/pkg/errors"
 
-	"github.com/oracle/mysql-operator/pkg/cluster/innodb"
+	"github.com/jkljajic/mysql-operator/pkg/cluster/innodb"
 )
 
 var (

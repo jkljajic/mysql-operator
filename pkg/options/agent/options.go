@@ -19,10 +19,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/spf13/pflag"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -61,7 +61,7 @@ type MySQLAgentOpts struct {
 func NewMySQLAgentOpts() *MySQLAgentOpts {
 	hostname, err := os.Hostname()
 	if err != nil {
-		glog.Fatalf("Failed to get the hostname: %v", err)
+		klog.Fatalf("Failed to get the hostname: %v", err)
 	}
 	namespace := os.Getenv("POD_NAMESPACE")
 	clusterName := os.Getenv("MYSQL_CLUSTER_NAME")

@@ -17,7 +17,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/oracle/mysql-operator/pkg/cluster/innodb"
+	"github.com/jkljajic/mysql-operator/pkg/cluster/innodb"
 )
 
 var podName string

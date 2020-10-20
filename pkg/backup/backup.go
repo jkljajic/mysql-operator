@@ -17,10 +17,10 @@ package backup
 import (
 	"os"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	"github.com/oracle/mysql-operator/pkg/backup/executor"
-	"github.com/oracle/mysql-operator/pkg/backup/storage"
-	"github.com/oracle/mysql-operator/pkg/resources/statefulsets"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/backup/executor"
+	"github.com/jkljajic/mysql-operator/pkg/backup/storage"
+	"github.com/jkljajic/mysql-operator/pkg/resources/statefulsets"
 )
 
 const (

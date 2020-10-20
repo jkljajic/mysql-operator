@@ -15,11 +15,11 @@
 package versioned
 
 import (
-	glog "github.com/golang/glog"
-	mysqlv1alpha1 "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/typed/mysql/v1alpha1"
+	mysqlv1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/typed/mysql/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
+	klog "k8s.io/klog/v2"
 )
 
 type Interface interface {
@@ -70,7 +70,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
-		glog.Errorf("failed to create the DiscoveryClient: %v", err)
+		klog.Errorf("failed to create the DiscoveryClient: %v", err)
 		return nil, err
 	}
 	return &cs, nil

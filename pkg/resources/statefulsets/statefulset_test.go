@@ -23,8 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	operatoropts "github.com/oracle/mysql-operator/pkg/options/operator"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	operatoropts "github.com/jkljajic/mysql-operator/pkg/options/operator"
 )
 
 func mockOperatorConfig() operatoropts.MySQLOperatorOpts {
@@ -39,7 +39,7 @@ func TestMySQLRootPasswordNoSecretRef(t *testing.T) {
 		Spec:       v1alpha1.ClusterSpec{},
 	}
 
-	actual := mysqlRootPassword(cluster).ValueFrom.SecretKeyRef.Name
+	actual := mysqlRootPassword(cluster).SecretRef.Name // ValueFrom.SecretKeyRef.Name
 
 	if actual != "cluster-root-password" {
 		t.Errorf("Expected cluster-root-password but got %s", actual)
@@ -53,7 +53,7 @@ func TestMySQLRootPasswordWithSecretRef(t *testing.T) {
 		},
 	}
 
-	actual := mysqlRootPassword(cluster).ValueFrom.SecretKeyRef.Name
+	actual := mysqlRootPassword(cluster).SecretRef.Name // ValueFrom.SecretKeyRef.Name
 
 	if actual != "secret" {
 		t.Errorf("Expected secret but got %s", actual)

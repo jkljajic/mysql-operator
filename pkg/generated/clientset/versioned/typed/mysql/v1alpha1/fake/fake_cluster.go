@@ -15,7 +15,7 @@
 package fake
 
 import (
-	v1alpha1 "github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
+	v1alpha1 "github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -115,7 +115,7 @@ func (c *FakeClusters) DeleteCollection(options *v1.DeleteOptions, listOptions v
 // Patch applies the patch and returns the patched cluster.
 func (c *FakeClusters) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Cluster, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(clustersResource, c.ns, name, data, subresources...), &v1alpha1.Cluster{})
+		Invokes(testing.NewPatchSubresourceAction(clustersResource, c.ns, name, pt, data, subresources...), &v1alpha1.Cluster{})
 
 	if obj == nil {
 		return nil, err

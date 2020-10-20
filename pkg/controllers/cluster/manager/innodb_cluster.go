@@ -28,9 +28,9 @@ import (
 	retry "k8s.io/client-go/util/retry"
 	utilexec "k8s.io/utils/exec"
 
-	"github.com/oracle/mysql-operator/pkg/cluster"
-	"github.com/oracle/mysql-operator/pkg/cluster/innodb"
-	"github.com/oracle/mysql-operator/pkg/util/mysqlsh"
+	"github.com/jkljajic/mysql-operator/pkg/cluster"
+	"github.com/jkljajic/mysql-operator/pkg/cluster/innodb"
+	"github.com/jkljajic/mysql-operator/pkg/util/mysqlsh"
 )
 
 var errNoClusterFound = errors.New("no cluster found on any of the seed nodes")
@@ -54,7 +54,7 @@ func isDatabaseRunning(ctx context.Context) bool {
 
 func podExists(kubeclient kubernetes.Interface, instance *cluster.Instance) bool {
 	err := wait.ExponentialBackoff(retry.DefaultRetry, func() (bool, error) {
-		_, err := kubeclient.CoreV1().Pods(instance.Namespace).Get(instance.PodName(), metav1.GetOptions{})
+		_, err := kubeclient.CoreV1().Pods(instance.Namespace).Get(context.Background(), instance.PodName(), metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return false, nil

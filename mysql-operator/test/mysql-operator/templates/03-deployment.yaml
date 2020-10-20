@@ -1,10 +1,13 @@
-apiVersion: apps/v1
+---
+# Source: mysql-operator/templates/03-deployment.yaml
+apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: mysql-operator
+  namespace: mysql-operator
   labels:
-    release: {{ .Release.Name }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: RELEASE-NAME
+    chart: mysql-operator-0.2.1
     app: mysql-operator
 spec:
   replicas: 1
@@ -22,13 +25,10 @@ spec:
       serviceAccountName: mysql-operator
       containers:
       - name: mysql-operator-controller
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        image: {{ .Values.image.registry }}/mysql-operator:{{ .Values.image.tag }}
+        imagePullPolicy: Always
+        image: iad.ocir.io/oracle/mysql-operator:0.3.0
         ports:
         - containerPort: 10254
         args:
-          - -v4
-{{- if not .Values.operator.global }}
-          - --namespace={{- .Release.Namespace }}
-{{- end }}
-          - --mysql-agent-image={{- .Values.image.registry }}/mysql-agent
+        - -v=4
+        - --mysql-agent-image=iad.ocir.io/oracle/mysql-agent

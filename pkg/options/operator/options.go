@@ -21,13 +21,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/golang/glog"
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -101,7 +101,7 @@ func (s *MySQLOperatorOpts) EnsureDefaults() {
 	if s.Hostname == "" {
 		hostname, err := os.Hostname()
 		if err != nil {
-			glog.Fatalf("Failed to get the hostname: %v", err)
+			klog.Fatalf("Failed to get the hostname: %v", err)
 		}
 		s.Hostname = hostname
 	}

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
+	klog "k8s.io/klog/v2"
 	"github.com/pkg/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -32,11 +32,11 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 	workqueue "k8s.io/client-go/util/workqueue"
 
-	cluster "github.com/oracle/mysql-operator/pkg/cluster"
-	innodb "github.com/oracle/mysql-operator/pkg/cluster/innodb"
-	constants "github.com/oracle/mysql-operator/pkg/constants"
-	clusterctrl "github.com/oracle/mysql-operator/pkg/controllers/cluster"
-	controllerutils "github.com/oracle/mysql-operator/pkg/controllers/util"
+	cluster "github.com/jkljajic/mysql-operator/pkg/cluster"
+	innodb "github.com/jkljajic/mysql-operator/pkg/cluster/innodb"
+	constants "github.com/jkljajic/mysql-operator/pkg/constants"
+	clusterctrl "github.com/jkljajic/mysql-operator/pkg/controllers/cluster"
+	controllerutils "github.com/jkljajic/mysql-operator/pkg/controllers/util"
 )
 
 const controllerAgentName = "innodb-cluster-labeler"
@@ -128,11 +128,11 @@ func (clc *ClusterLabelerController) syncHandler(key string) error {
 
 		var role string
 		if !inCluster(status, pod.Name, clc.localInstance.Port) {
-			glog.Infof("Removing %q label from previously labeled primary %s/%s",
+			klog.Infof("Removing %q label from previously labeled primary %s/%s",
 				constants.LabelClusterRole, pod.Namespace, pod.Name)
 			role = ""
 		} else {
-			glog.Infof("Labeling previously labeled primary %s/%s as secondary", pod.Namespace, pod.Name)
+			klog.Infof("Labeling previously labeled primary %s/%s as secondary", pod.Namespace, pod.Name)
 			role = constants.ClusterRoleSecondary
 		}
 
@@ -149,7 +149,7 @@ func (clc *ClusterLabelerController) syncHandler(key string) error {
 			return errors.Wrap(err, "failed to get primary Pod")
 		}
 
-		glog.Infof("Labeling %s/%s as primary", primary.Namespace, primary.Name)
+		klog.Infof("Labeling %s/%s as primary", primary.Namespace, primary.Name)
 		if err := clc.updateClusterRoleLabel(primary, constants.ClusterRolePrimary); err != nil {
 			return errors.Wrapf(err, "labeling %s/%s as primary", primary.Namespace, primary.Name)
 		}
@@ -165,7 +165,7 @@ func (clc *ClusterLabelerController) syncHandler(key string) error {
 	for _, pod := range pods {
 		if !inCluster(status, pod.Name, clc.localInstance.Port) {
 			if HasRoleSelector(clusterName).Matches(labels.Set(pod.Labels)) {
-				glog.Infof("Removing %q label from %s/%s as it's no longer in an ONLINE state",
+				klog.Infof("Removing %q label from %s/%s as it's no longer in an ONLINE state",
 					constants.LabelClusterRole, pod.Namespace, pod.Name)
 				if err := clc.updateClusterRoleLabel(pod, ""); err != nil {
 					return errors.Wrapf(err, "removing %q label from %s/%s", constants.LabelClusterRole, pod.Namespace, pod.Name)
@@ -174,7 +174,7 @@ func (clc *ClusterLabelerController) syncHandler(key string) error {
 			continue
 		}
 		if pod.Name != clc.localInstance.PodName() && !SecondarySelector(clusterName).Matches(labels.Set(pod.Labels)) {
-			glog.Infof("Labeling %s/%s as secondary", pod.Namespace, pod.Name)
+			klog.Infof("Labeling %s/%s as secondary", pod.Namespace, pod.Name)
 			if err := clc.updateClusterRoleLabel(pod, constants.ClusterRoleSecondary); err != nil {
 				return errors.Wrapf(err, "labeling %s/%s as secondary", pod.Namespace, pod.Name)
 			}
@@ -238,19 +238,19 @@ func (clc *ClusterLabelerController) Run(ctx context.Context) {
 	defer utilruntime.HandleCrash()
 	defer clc.queue.ShutDown()
 
-	glog.Infof("Starting the ClusterLabelerController")
+	klog.Infof("Starting the ClusterLabelerController")
 
 	// Wait for the caches to be synced before starting worker
-	glog.Info("Waiting for ClusterLabelerController informer caches to sync")
+	klog.Info("Waiting for ClusterLabelerController informer caches to sync")
 	if !controllerutils.WaitForCacheSync(controllerAgentName, ctx.Done(), clc.podListerSynced) {
 		return
 	}
 
-	glog.Info("Starting ClusterLabelerController controller worker")
+	klog.Info("Starting ClusterLabelerController controller worker")
 	go wait.Until(clc.runWorker, time.Second, ctx.Done())
 
-	glog.Info("Started ClusterLabelerController controller worker")
-	defer glog.Info("Shutting down ClusterLabelerController controller worker")
+	klog.Info("Started ClusterLabelerController controller worker")
+	defer klog.Info("Shutting down ClusterLabelerController controller worker")
 	<-ctx.Done()
 }
 

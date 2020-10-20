@@ -22,12 +22,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
+	klog "k8s.io/klog/v2"
 	"github.com/pkg/errors"
 
 	utilexec "k8s.io/utils/exec"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
 )
 
 const (
@@ -87,7 +87,7 @@ func (ex *Executor) Backup(backupDir string, clusterName string) (io.ReadCloser,
 	cmd.SetStdout(zw)
 
 	go func() {
-		glog.V(4).Infof("running cmd: '%s %s'", mysqldumpPath, SanitizeArgs(append(args, dbNames...), ex.config.password))
+		klog.Infof("running cmd: '%s %s'", mysqldumpPath, SanitizeArgs(append(args, dbNames...), ex.config.password))
 		err = cmd.Run()
 		zw.Close()
 		if err != nil {
@@ -127,7 +127,7 @@ func (ex *Executor) Restore(content io.ReadCloser) error {
 	defer zr.Close()
 	cmd.SetStdin(zr)
 
-	glog.V(4).Infof("running cmd: '%s %s'", mysqlPath, SanitizeArgs(args, ex.config.password))
+	klog.Infof("running cmd: '%s %s'", mysqlPath, SanitizeArgs(args, ex.config.password))
 	_, err = cmd.CombinedOutput()
 	return err
 }

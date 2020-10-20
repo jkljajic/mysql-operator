@@ -17,12 +17,12 @@ package cluster
 import (
 	"strings"
 
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	"github.com/oracle/mysql-operator/pkg/constants"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/constants"
 )
 
 // SelectorForCluster creates a labels.Selector to match a given clusters
@@ -46,7 +46,7 @@ func combineSelectors(first labels.Selector, rest ...labels.Selector) labels.Sel
 	return res
 }
 
-func requiresMySQLAgentStatefulSetUpgrade(ss *appsv1beta1.StatefulSet, targetContainer string, operatorVersion string) bool {
+func requiresMySQLAgentStatefulSetUpgrade(ss *appsv1.StatefulSet, targetContainer string, operatorVersion string) bool {
 	if !SelectorForClusterOperatorVersion(operatorVersion).Matches(labels.Set(ss.Labels)) {
 		return true
 	}

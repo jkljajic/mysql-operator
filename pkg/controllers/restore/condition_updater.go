@@ -1,11 +1,11 @@
 package restore
 
 import (
-	"github.com/golang/glog"
+	klog "k8s.io/klog/v2"
 
-	restoreutil "github.com/oracle/mysql-operator/pkg/api/restore"
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	clientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/typed/mysql/v1alpha1"
+	restoreutil "github.com/jkljajic/mysql-operator/pkg/api/restore"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	clientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/typed/mysql/v1alpha1"
 )
 
 // ConditionUpdater enables updating Restore conditions.
@@ -18,7 +18,7 @@ type conditionUpdater struct {
 }
 
 func (p *conditionUpdater) Update(restore *v1alpha1.Restore, condition *v1alpha1.RestoreCondition) error {
-	glog.V(2).Infof("Updating Restore condition for %s/%s to (%s==%s)", restore.Namespace, restore.Name, condition.Type, condition.Status)
+	klog.Infof("Updating Restore condition for %s/%s to (%s==%s)", restore.Namespace, restore.Name, condition.Type, condition.Status)
 	if restoreutil.UpdateRestoreCondition(&restore.Status, condition) {
 		_, err := p.client.Restores(restore.Namespace).Update(restore)
 		return err

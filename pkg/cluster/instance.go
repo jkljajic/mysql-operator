@@ -24,7 +24,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/oracle/mysql-operator/pkg/cluster/innodb"
+	"github.com/jkljajic/mysql-operator/pkg/cluster/innodb"
+	"github.com/jkljajic/mysql-operator/pkg/constants"
 )
 
 // Instance represents the local MySQL instance.
@@ -115,11 +116,14 @@ func (i *Instance) GetPassword() string {
 // GetShellURI returns the MySQL shell URI for the local MySQL instance.
 func (i *Instance) GetShellURI() string {
 	return fmt.Sprintf("%s:%s@%s:%d", i.GetUser(), i.GetPassword(), i.Name(), i.Port)
+	// --ssl-mode=<mode> DISABLED,PREFERRED, REQUIRED, VERIFY_CA,VERIFY_IDENTITY
+	//  --ssl-ca=<file_name>
+	//
 }
 
 // Name returns the name of the instance.
 func (i *Instance) Name() string {
-	return fmt.Sprintf("%s.%s", i.PodName(), i.ParentName)
+	return fmt.Sprintf("%s.%s", i.PodName(), i.ParentName+constants.DefaultServiceSuffix)
 }
 
 // PodName returns the name of the instance's Pod.

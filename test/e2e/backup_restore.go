@@ -24,10 +24,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	"github.com/oracle/mysql-operator/test/e2e/framework"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/test/e2e/framework"
 
-	mysqlclientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
+	mysqlclientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
 )
 
 var _ = Describe("Backup/Restore", func() {

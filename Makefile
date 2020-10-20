@@ -15,14 +15,14 @@
 ifdef WERCKER
     # Insert swear words about mysql group replication and hostname length. Arghh..
     VERSION ?= ${WERCKER_GIT_COMMIT}
-    TENANT := "oracle"
+    TENANT := "jkljajic"
 else
-    VERSION ?= ${USER}-$(shell git describe --always --dirty)
-    TENANT ?= "spinnaker"
+    VERSION ?= $(shell git describe --always)
+    TENANT ?= "jkljajic"
 endif
 
 PKG             := github.com/oracle/mysql-operator
-REGISTRY        := iad.ocir.io
+REGISTRY        := docker.io
 SRC_DIRS        := cmd pkg test/examples
 CMD_DIRECTORIES := $(sort $(dir $(wildcard ./cmd/*/)))
 COMMANDS        := $(CMD_DIRECTORIES:./cmd/%/=%)
@@ -30,6 +30,7 @@ COMMANDS        := $(CMD_DIRECTORIES:./cmd/%/=%)
 ARCH    ?= amd64
 OS      ?= linux
 UNAME_S := $(shell uname -s)
+
 
 ifeq ($(UNAME_S),Darwin)
 	# Cross-compiling from OSX to linux, go install puts the binaries in $GOPATH/bin/$GOOS_$GOARCH
@@ -67,6 +68,8 @@ dist: build-dirs
 build: dist build-dirs Makefile
 	@echo "Building: $(BINARIES)"
 	@touch pkg/version/version.go # Important. Work around for https://github.com/golang/go/issues/18369
+	@sed -ie  "s/buildVersion .*/buildVersion =\"${VERSION}\"/g" pkg/version/version.go
+	@sed -ie  "s/tag: .*/tag: ${VERSION}/g" mysql-operator/values.yaml
 	ARCH=$(ARCH) OS=$(OS) VERSION=$(VERSION) PKG=$(PKG) ./hack/build.sh
 	cp $(BINARIES) ./bin/$(OS)_$(ARCH)/
 
@@ -87,7 +90,7 @@ build-docker:
 # Note: Only used for development, i.e. in CI the images are pushed using Wercker.
 .PHONY: push
 push: build build-docker
-	@docker login iad.ocir.io -u $(DOCKER_REGISTRY_USERNAME) -p '$(DOCKER_REGISTRY_PASSWORD)'
+	@echo docker login $(REGISTRY) -u $(DOCKER_REGISTRY_USERNAME) -p '$(DOCKER_REGISTRY_PASSWORD)'
 	@docker push $(REGISTRY)/$(TENANT)/mysql-operator:$(VERSION)
 	@docker push $(REGISTRY)/$(TENANT)/mysql-agent:$(VERSION)
 
@@ -108,7 +111,7 @@ run-dev:
 	@go run \
 	    -ldflags "-X ${PKG}/pkg/version.buildVersion=${MYSQL_AGENT_VERSION}" \
 	    cmd/mysql-operator/main.go \
-	    --mysql-agent-image=iad.ocir.io/$(TENANT)/mysql-agent \
+	    --mysql-agent-image=$(TENANT)/mysql-agent \
 	    --kubeconfig=${KUBECONFIG} \
 	    --v=4 \
 	    --namespace=${USER}

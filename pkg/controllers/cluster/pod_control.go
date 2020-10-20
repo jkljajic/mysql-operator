@@ -17,13 +17,13 @@ package cluster
 import (
 	"fmt"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	corelistersv1 "k8s.io/client-go/listers/core/v1"
 
-	"github.com/oracle/mysql-operator/pkg/constants"
-	"github.com/oracle/mysql-operator/pkg/controllers/util"
-	"github.com/oracle/mysql-operator/pkg/resources/statefulsets"
+	"github.com/jkljajic/mysql-operator/pkg/constants"
+	"github.com/jkljajic/mysql-operator/pkg/controllers/util"
+	"github.com/jkljajic/mysql-operator/pkg/resources/statefulsets"
 )
 
 // PodControlInterface defines the interface that the

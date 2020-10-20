@@ -17,14 +17,14 @@ package cluster
 import (
 	"fmt"
 
-	"github.com/golang/glog"
+	klog "k8s.io/klog/v2"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
 
-	v1alpha1 "github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	clientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
-	listersv1alpha1 "github.com/oracle/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
+	v1alpha1 "github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	clientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
+	listersv1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
 )
 
 type clusterUpdaterInterface interface {
@@ -51,7 +51,7 @@ func (csu *clusterUpdater) UpdateClusterStatus(cluster *v1alpha1.Cluster, status
 
 		updated, err := csu.lister.Clusters(cluster.Namespace).Get(cluster.Name)
 		if err != nil {
-			glog.Errorf("Error getting updated Cluster %s/%s: %v", cluster.Namespace, cluster.Name, err)
+			klog.Errorf("Error getting updated Cluster %s/%s: %v", cluster.Namespace, cluster.Name, err)
 			return err
 		}
 
@@ -70,11 +70,11 @@ func (csu *clusterUpdater) UpdateClusterLabels(cluster *v1alpha1.Cluster, lbls l
 		}
 
 		key := fmt.Sprintf("%s/%s", cluster.GetNamespace(), cluster.GetName())
-		glog.V(4).Infof("Conflict updating Cluster labels. Getting updated Cluster %s from cache...", key)
+		klog.Infof("Conflict updating Cluster labels. Getting updated Cluster %s from cache...", key)
 
 		updated, err := csu.lister.Clusters(cluster.Namespace).Get(cluster.Name)
 		if err != nil {
-			glog.Errorf("Error getting updated Cluster %q: %v", key, err)
+			klog.Errorf("Error getting updated Cluster %q: %v", key, err)
 			return err
 		}
 

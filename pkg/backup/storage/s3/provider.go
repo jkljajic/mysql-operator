@@ -22,12 +22,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/klog/v2"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
 )
 
 // Provider is storage implementation of provider.Interface.
@@ -69,7 +69,7 @@ func NewProvider(provider *v1alpha1.S3StorageProvider, credentials map[string]st
 
 // Store the given data at the given key.
 func (p *Provider) Store(key string, body io.ReadCloser) error {
-	glog.V(2).Infof("Storing backup (provider=\"S3\", endpoint=%q, bucket=%q, key=%q)", p.Endpoint, p.Bucket, key)
+	klog.Infof("Storing backup (provider=\"S3\", endpoint=%q, bucket=%q, key=%q)", p.Endpoint, p.Bucket, key)
 
 	defer body.Close()
 
@@ -83,7 +83,7 @@ func (p *Provider) Store(key string, body io.ReadCloser) error {
 
 // Retrieve the given key from S3 storage service.
 func (p *Provider) Retrieve(key string) (io.ReadCloser, error) {
-	glog.V(2).Infof("Retrieving backup (provider=\"s3\", endpoint=%q, bucket=%q, key=%q)", p.Endpoint, p.Bucket, key)
+	klog.Infof("Retrieving backup (provider=\"s3\", endpoint=%q, bucket=%q, key=%q)", p.Endpoint, p.Bucket, key)
 
 	obj, err := p.s3.GetObject(&s3.GetObjectInput{Bucket: &p.Bucket, Key: &key})
 	if err != nil {

@@ -19,20 +19,19 @@ import (
 	"fmt"
 	"os"
 
-	utilflag "k8s.io/apiserver/pkg/util/flag"
-	"k8s.io/apiserver/pkg/util/logs"
+	utilflag "k8s.io/component-base/cli/flag"
 
-	"github.com/golang/glog"
 	"github.com/spf13/pflag"
+	klog "k8s.io/klog/v2"
 
-	"github.com/oracle/mysql-operator/cmd/mysql-agent/app"
-	agentopts "github.com/oracle/mysql-operator/pkg/options/agent"
-	"github.com/oracle/mysql-operator/pkg/version"
+	"github.com/jkljajic/mysql-operator/cmd/mysql-agent/app"
+	agentopts "github.com/jkljajic/mysql-operator/pkg/options/agent"
+	"github.com/jkljajic/mysql-operator/pkg/version"
 )
 
 func main() {
+	klog.InitFlags(nil)
 	fmt.Fprintf(os.Stderr, "Starting mysql-agent version %s\n", version.GetBuildVersion())
-
 	opts := agentopts.NewMySQLAgentOpts()
 
 	opts.AddFlags(pflag.CommandLine)
@@ -41,11 +40,8 @@ func main() {
 	pflag.Parse()
 	goflag.CommandLine.Parse([]string{})
 
-	logs.InitLogs()
-	defer logs.FlushLogs()
-
 	pflag.VisitAll(func(flag *pflag.Flag) {
-		glog.V(2).Infof("FLAG: --%s=%q", flag.Name, flag.Value)
+		klog.V(6).Infof("FLAG: --%s=%q", flag.Name, flag.Value)
 	})
 
 	if err := app.Run(opts); err != nil {

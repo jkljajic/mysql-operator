@@ -15,17 +15,18 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
-	appsinformers "k8s.io/client-go/informers/apps/v1beta1"
+	appsinformers "k8s.io/client-go/informers/apps/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	cache "k8s.io/client-go/tools/cache"
@@ -33,16 +34,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	"github.com/oracle/mysql-operator/pkg/constants"
-	"github.com/oracle/mysql-operator/pkg/controllers/util"
-	mysqlfake "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/fake"
-	informerfactory "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions"
-	informersv1alpha1 "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
-	operatoropts "github.com/oracle/mysql-operator/pkg/options/operator"
-	"github.com/oracle/mysql-operator/pkg/resources/secrets"
-	statefulsets "github.com/oracle/mysql-operator/pkg/resources/statefulsets"
-	buildversion "github.com/oracle/mysql-operator/pkg/version"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/constants"
+	"github.com/jkljajic/mysql-operator/pkg/controllers/util"
+	mysqlfake "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/fake"
+	informerfactory "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions"
+	informersv1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
+	operatoropts "github.com/jkljajic/mysql-operator/pkg/options/operator"
+	"github.com/jkljajic/mysql-operator/pkg/resources/secrets"
+	statefulsets "github.com/jkljajic/mysql-operator/pkg/resources/statefulsets"
+	buildversion "github.com/jkljajic/mysql-operator/pkg/version"
 )
 
 func TestGetMySQLContainerIndex(t *testing.T) {
@@ -234,7 +235,7 @@ func TestSyncEnsureSecret(t *testing.T) {
 
 func assertOperatorSecretInvariants(t *testing.T, controller *MySQLController, cluster *v1alpha1.Cluster) {
 	secretName := secrets.GetRootPasswordSecretName(cluster)
-	secret, err := controller.kubeClient.CoreV1().Secrets(cluster.Namespace).Get(secretName, metav1.GetOptions{})
+	secret, err := controller.kubeClient.CoreV1().Secrets(cluster.Namespace).Get(context.Background(), secretName, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("Get client Cluster secret error: %+v", err)
 	}
@@ -272,7 +273,7 @@ func TestSyncEnsureService(t *testing.T) {
 
 func assertOperatorServiceInvariants(t *testing.T, controller *MySQLController, cluster *v1alpha1.Cluster) {
 	kubeClient := controller.kubeClient
-	service, err := kubeClient.CoreV1().Services(cluster.Namespace).Get(cluster.Name, metav1.GetOptions{})
+	service, err := kubeClient.CoreV1().Services(cluster.Namespace).Get(context.Background(), cluster.Name, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("Get client Cluster service error: %+v", err)
 	}
@@ -314,7 +315,7 @@ func TestSyncEnsureStatefulSet(t *testing.T) {
 
 func assertOperatorStatefulSetInvariants(t *testing.T, controller *MySQLController, cluster *v1alpha1.Cluster) {
 	kubeClient := controller.kubeClient
-	statefulset, err := kubeClient.AppsV1beta1().StatefulSets(cluster.Namespace).Get(cluster.Name, metav1.GetOptions{})
+	statefulset, err := kubeClient.AppsV1().StatefulSets(cluster.Namespace).Get(context.Background(), cluster.Name, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("Get client Cluster statefulset error: %+v", err)
 	}
@@ -420,7 +421,7 @@ func assertOperatorVersionInvariants(t *testing.T, controller *MySQLController, 
 	}
 
 	// Check StatefulSets has the correct operator version.
-	updatedStatefulSet, err := controller.kubeClient.AppsV1beta1().StatefulSets(namespace).Get(name, metav1.GetOptions{})
+	updatedStatefulSet, err := controller.kubeClient.AppsV1().StatefulSets(namespace).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("Get client StatefulSet err: %+v", err)
 	}
@@ -440,7 +441,7 @@ func assertOperatorVersionInvariants(t *testing.T, controller *MySQLController, 
 	}
 
 	// Check Pods has the correct operator version.
-	updatedPodList, err := controller.kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+	updatedPodList, err := controller.kubeClient.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		t.Fatalf("Get client PodList err: %+v", err)
 	}
@@ -593,7 +594,7 @@ func newFakeMySQLController(cluster *v1alpha1.Cluster, kuberesources ...runtime.
 
 	fakeInformers := &fakeMySQLControllerInformers{
 		clusterInformer:     mysqlopInformerFactory.MySQL().V1alpha1().Clusters(),
-		statefulSetInformer: kubeInformerFactory.Apps().V1beta1().StatefulSets(),
+		statefulSetInformer: kubeInformerFactory.Apps().V1().StatefulSets(),
 		podInformer:         kubeInformerFactory.Core().V1().Pods(),
 		serviceInformer:     kubeInformerFactory.Core().V1().Services(),
 	}

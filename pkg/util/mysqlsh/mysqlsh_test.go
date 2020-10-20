@@ -79,7 +79,7 @@ func TestGetClusterStatus(t *testing.T) {
 	warning := "No entry for terminal type \"unknown\";\nusing dumb terminal settings.\n"
 
 	fcmd := fakeexec.FakeCmd{
-		RunScript: []fakeexec.FakeRunAction{
+		RunScript: []fakeexec.FakeAction{
 			func() ([]byte, []byte, error) { return []byte(clusterStatusOutput), []byte(warning), nil },
 		},
 	}
@@ -103,7 +103,7 @@ func TestGetClusterStatus(t *testing.T) {
 		"--no-wizard",
 		"--uri", "root:foo@localhost.service.namespace.svc.cluster.local:3306",
 		"--py",
-		"-e", "print dba.get_cluster('Cluster').status()",
+		"-e", "print(dba.get_cluster('Cluster').status())",
 	}
 	if !reflect.DeepEqual(fcmd.RunLog[0], expectedCall) {
 		t.Errorf("Expected call %+v, got %+v", expectedCall, fcmd.RunLog[0])
@@ -129,7 +129,7 @@ mysqlx: [Warning] Using a password on the command line interface can be insecure
 {"reason": "recoverable", "state": "ok"}`
 	warning := "No entry for terminal type \"unknown\";\nusing dumb terminal settings.\n"
 	fcmd := fakeexec.FakeCmd{
-		RunScript: []fakeexec.FakeRunAction{
+		RunScript: []fakeexec.FakeAction{
 			func() ([]byte, []byte, error) { return []byte(getInstanceStateOutput), []byte(warning), nil },
 		},
 	}
@@ -154,7 +154,7 @@ mysqlx: [Warning] Using a password on the command line interface can be insecure
 		"--no-wizard",
 		"--uri", "root:foo@localhost.service.namespace.svc.cluster.local:3306",
 		"--py",
-		"-e", fmt.Sprintf("print dba.get_cluster('Cluster').check_instance_state('%s')", instanceURI),
+		"-e", fmt.Sprintf("print(dba.get_cluster('Cluster').check_instance_state('%s'))", instanceURI),
 	}
 	if !reflect.DeepEqual(fcmd.RunLog[0], expectedCall) {
 		t.Errorf("Expected call %+v, got %+v", expectedCall, fcmd.RunLog[0])
@@ -174,7 +174,7 @@ mysqlx: [Warning] Using a password on the command line interface can be insecure
 
 func TestRemoveInstanceFromCluster(t *testing.T) {
 	fcmd := fakeexec.FakeCmd{
-		RunScript: []fakeexec.FakeRunAction{
+		RunScript: []fakeexec.FakeAction{
 			func() ([]byte, []byte, error) { return []byte{}, []byte{}, nil },
 		},
 	}

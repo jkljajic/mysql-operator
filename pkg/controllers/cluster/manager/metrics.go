@@ -15,7 +15,7 @@
 package manager
 
 import (
-	"github.com/oracle/mysql-operator/pkg/util/metrics"
+	"github.com/jkljajic/mysql-operator/pkg/util/metrics"
 )
 
 var (

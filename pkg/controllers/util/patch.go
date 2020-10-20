@@ -15,23 +15,26 @@
 package util
 
 import (
+	"context"
 	"encoding/json"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/kubernetes"
 )
 
 // UpdateStatefulSet performs a direct update for the specified StatefulSet.
-func UpdateStatefulSet(kubeClient kubernetes.Interface, newData *appsv1beta1.StatefulSet) (*appsv1beta1.StatefulSet, error) {
-	result, err := kubeClient.AppsV1beta1().StatefulSets(newData.Namespace).Update(newData)
+func UpdateStatefulSet(kubeClient kubernetes.Interface, newData *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	result, err := kubeClient.AppsV1().StatefulSets(newData.Namespace).Update(context.TODO(), newData, metav1.UpdateOptions{})
 	if err != nil {
-		glog.Errorf("Failed to update StatefulSet: %v", err)
+		klog.Errorf("Failed to update StatefulSet: %v", err)
 		return nil, err
 	}
 
@@ -39,7 +42,7 @@ func UpdateStatefulSet(kubeClient kubernetes.Interface, newData *appsv1beta1.Sta
 }
 
 // PatchStatefulSet performs a direct patch update for the specified StatefulSet.
-func PatchStatefulSet(kubeClient kubernetes.Interface, oldData *appsv1beta1.StatefulSet, newData *appsv1beta1.StatefulSet) (*appsv1beta1.StatefulSet, error) {
+func PatchStatefulSet(kubeClient kubernetes.Interface, oldData *appsv1.StatefulSet, newData *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 	originalJSON, err := json.Marshal(oldData)
 	if err != nil {
 		return nil, err
@@ -51,15 +54,15 @@ func PatchStatefulSet(kubeClient kubernetes.Interface, oldData *appsv1beta1.Stat
 	}
 
 	patchBytes, err := strategicpatch.CreateTwoWayMergePatch(
-		originalJSON, updatedJSON, appsv1beta1.StatefulSet{})
+		originalJSON, updatedJSON, appsv1.StatefulSet{})
 	if err != nil {
 		return nil, err
 	}
-	glog.V(4).Infof("Patching StatefulSet %q: %s", types.NamespacedName{Namespace: oldData.Namespace, Name: oldData.Name}, string(patchBytes))
+	klog.V(4).Infof("Patching StatefulSet %q: %s", types.NamespacedName{Namespace: oldData.Namespace, Name: oldData.Name}, string(patchBytes))
 
-	result, err := kubeClient.AppsV1beta1().StatefulSets(oldData.Namespace).Patch(oldData.Name, types.StrategicMergePatchType, patchBytes)
+	result, err := kubeClient.AppsV1().StatefulSets(oldData.Namespace).Patch(context.TODO(), oldData.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
 	if err != nil {
-		glog.Errorf("Failed to patch StatefulSet: %v", err)
+		klog.Errorf("Failed to patch StatefulSet: %v", err)
 		return nil, err
 	}
 
@@ -68,7 +71,7 @@ func PatchStatefulSet(kubeClient kubernetes.Interface, oldData *appsv1beta1.Stat
 
 // UpdatePod performs a direct update for the specified Pod.
 func UpdatePod(kubeClient kubernetes.Interface, newData *corev1.Pod) (*corev1.Pod, error) {
-	result, err := kubeClient.CoreV1().Pods(newData.Namespace).Update(newData)
+	result, err := kubeClient.CoreV1().Pods(newData.Namespace).Update(context.TODO(), newData, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update pod")
 	}
@@ -92,9 +95,9 @@ func PatchPod(kubeClient kubernetes.Interface, oldData *corev1.Pod, newData *cor
 	if err != nil {
 		return nil, err
 	}
-	glog.V(4).Infof("Patching Pod %q: %s", types.NamespacedName{Namespace: oldData.Namespace, Name: oldData.Name}, string(patchBytes))
+	klog.V(4).Infof("Patching Pod %q: %s", types.NamespacedName{Namespace: oldData.Namespace, Name: oldData.Name}, string(patchBytes))
 
-	result, err := kubeClient.CoreV1().Pods(oldData.Namespace).Patch(oldData.Name, types.StrategicMergePatchType, patchBytes)
+	result, err := kubeClient.CoreV1().Pods(oldData.Namespace).Patch(context.TODO(), oldData.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to patch pod")
 	}

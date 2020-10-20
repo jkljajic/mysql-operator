@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/oracle/mysql-operator/pkg/constants"
+	"github.com/jkljajic/mysql-operator/pkg/constants"
 )
 
 func validateCluster(c *Cluster) field.ErrorList {

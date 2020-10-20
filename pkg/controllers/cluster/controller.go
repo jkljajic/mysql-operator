@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,36 +28,36 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	wait "k8s.io/apimachinery/pkg/util/wait"
-	appsinformers "k8s.io/client-go/informers/apps/v1beta1"
+	appsinformers "k8s.io/client-go/informers/apps/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	kubernetes "k8s.io/client-go/kubernetes"
 	scheme "k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	appslisters "k8s.io/client-go/listers/apps/v1beta1"
+	appslisters "k8s.io/client-go/listers/apps/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	cache "k8s.io/client-go/tools/cache"
 	record "k8s.io/client-go/tools/record"
 	workqueue "k8s.io/client-go/util/workqueue"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
+	klog "k8s.io/klog/v2"
 
-	clusterutil "github.com/oracle/mysql-operator/pkg/api/cluster"
-	v1alpha1 "github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	constants "github.com/oracle/mysql-operator/pkg/constants"
-	controllerutils "github.com/oracle/mysql-operator/pkg/controllers/util"
-	clientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
-	opscheme "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/scheme"
-	informersv1alpha1 "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
-	listersv1alpha1 "github.com/oracle/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
+	clusterutil "github.com/jkljajic/mysql-operator/pkg/api/cluster"
+	v1alpha1 "github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	constants "github.com/jkljajic/mysql-operator/pkg/constants"
+	controllerutils "github.com/jkljajic/mysql-operator/pkg/controllers/util"
+	clientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
+	opscheme "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/scheme"
+	informersv1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions/mysql/v1alpha1"
+	listersv1alpha1 "github.com/jkljajic/mysql-operator/pkg/generated/listers/mysql/v1alpha1"
 
-	operatoropts "github.com/oracle/mysql-operator/pkg/options/operator"
-	secrets "github.com/oracle/mysql-operator/pkg/resources/secrets"
-	services "github.com/oracle/mysql-operator/pkg/resources/services"
-	statefulsets "github.com/oracle/mysql-operator/pkg/resources/statefulsets"
-	metrics "github.com/oracle/mysql-operator/pkg/util/metrics"
-	buildversion "github.com/oracle/mysql-operator/pkg/version"
+	operatoropts "github.com/jkljajic/mysql-operator/pkg/options/operator"
+	secrets "github.com/jkljajic/mysql-operator/pkg/resources/secrets"
+	services "github.com/jkljajic/mysql-operator/pkg/resources/services"
+	statefulsets "github.com/jkljajic/mysql-operator/pkg/resources/statefulsets"
+	metrics "github.com/jkljajic/mysql-operator/pkg/util/metrics"
+	buildversion "github.com/jkljajic/mysql-operator/pkg/version"
 )
 
 const controllerAgentName = "mysql-operator"
@@ -153,9 +153,9 @@ func NewController(
 	opscheme.AddToScheme(scheme.Scheme) // TODO: This shouldn't be done here I don't think.
 
 	// Create event broadcaster.
-	glog.V(4).Info("Creating event broadcaster")
+	klog.Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.Infof)
+	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
@@ -232,10 +232,10 @@ func (m *MySQLController) Run(ctx context.Context, threadiness int) {
 	defer utilruntime.HandleCrash()
 	defer m.queue.ShutDown()
 
-	glog.Info("Starting Cluster controller")
+	klog.Info("Starting Cluster controller")
 
 	// Wait for the caches to be synced before starting workers
-	glog.Info("Waiting for Cluster controller informer caches to sync")
+	klog.Info("Waiting for Cluster controller informer caches to sync")
 	if !controllerutils.WaitForCacheSync("mysql cluster", ctx.Done(),
 		m.clusterListerSynced,
 		m.statefulSetListerSynced,
@@ -244,14 +244,14 @@ func (m *MySQLController) Run(ctx context.Context, threadiness int) {
 		return
 	}
 
-	glog.Info("Starting Cluster controller workers")
+	klog.Info("Starting Cluster controller workers")
 	// Launch two workers to process Foo resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(m.runWorker, time.Second, ctx.Done())
 	}
 
-	glog.Info("Started Cluster controller workers")
-	defer glog.Info("Shutting down Cluster controller workers")
+	klog.Info("Started Cluster controller workers")
+	defer klog.Info("Shutting down Cluster controller workers")
 	<-ctx.Done()
 }
 
@@ -283,7 +283,7 @@ func (m *MySQLController) processNextWorkItem() bool {
 			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
 		}
 		m.queue.Forget(obj)
-		glog.Infof("Successfully synced '%s'", key)
+		klog.Infof("Successfully synced '%s'", key)
 		return nil
 	}(obj)
 
@@ -332,7 +332,7 @@ func (m *MySQLController) syncHandler(key string) error {
 	// Ensure that the required labels are set on the cluster.
 	sel := combineSelectors(SelectorForCluster(cluster), SelectorForClusterOperatorVersion(operatorVersion))
 	if !sel.Matches(labels.Set(cluster.Labels)) {
-		glog.V(2).Infof("Setting labels on cluster %s", SelectorForCluster(cluster).String())
+		klog.Infof("Setting labels on cluster %s", SelectorForCluster(cluster).String())
 		if cluster.Labels == nil {
 			cluster.Labels = make(map[string]string)
 		}
@@ -348,11 +348,11 @@ func (m *MySQLController) syncHandler(key string) error {
 			return errors.Wrap(err, "creating root password Secret")
 		}
 	}
-
-	svc, err := m.serviceLister.Services(cluster.Namespace).Get(cluster.Name)
+	//headless
+	svc, err := m.serviceLister.Services(cluster.Namespace).Get(cluster.GetServiceHeadlessName())
 	// If the resource doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
-		glog.V(2).Infof("Creating a new Service for cluster %q", nsName)
+		klog.Infof("Creating a new Service for cluster %q", nsName)
 		svc = services.NewForCluster(cluster)
 		err = m.serviceControl.CreateService(svc)
 	}
@@ -360,6 +360,18 @@ func (m *MySQLController) syncHandler(key string) error {
 	// If an error occurs during Get/Create, we'll requeue the item so we can
 	// attempt processing again later. This could have been caused by a
 	// temporary network failure, or any other transient reason.
+	if err != nil {
+		return err
+	}
+
+	//TODO: create mysql -> primary ,mysql-secundary
+	svcprim, err := m.serviceLister.Services(cluster.Namespace).Get(cluster.GetServiceName())
+	if apierrors.IsNotFound(err) {
+		klog.Infof("Creating a new Service pimary for cluster %q", nsName)
+		svcprim = services.NewForClusterPrimary(cluster)
+		err = m.serviceControl.CreateService(svcprim)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -375,7 +387,7 @@ func (m *MySQLController) syncHandler(key string) error {
 	ss, err := m.statefulSetLister.StatefulSets(cluster.Namespace).Get(cluster.Name)
 	// If the resource doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
-		glog.V(2).Infof("Creating a new StatefulSet for cluster %q", nsName)
+		klog.Infof("Creating a new StatefulSet for cluster %q", nsName)
 		ss = statefulsets.NewForCluster(cluster, m.opConfig.Images, svc.Name)
 		err = m.statefulSetControl.CreateStatefulSet(ss)
 	}
@@ -409,7 +421,7 @@ func (m *MySQLController) syncHandler(key string) error {
 	// current desired replicas on the StatefulSet, we should update the
 	// StatefulSet resource.
 	if cluster.Spec.Members != *ss.Spec.Replicas {
-		glog.V(4).Infof("Updating %q: clusterMembers=%d statefulSetReplicas=%d",
+		klog.Infof("Updating %q: clusterMembers=%d statefulSetReplicas=%d",
 			nsName, cluster.Spec.Members, ss.Spec.Replicas)
 		old := ss.DeepCopy()
 		ss = statefulsets.NewForCluster(cluster, m.opConfig.Images, svc.Name)
@@ -497,26 +509,26 @@ func (m *MySQLController) ensureMySQLVersion(c *v1alpha1.Cluster, ss *apps.State
 func (m *MySQLController) ensureMySQLOperatorVersion(c *v1alpha1.Cluster, ss *apps.StatefulSet, operatorVersion string) error {
 	// Ensure the Pods belonging to the Cluster are updated to the correct 'mysql-agent' image for the current MySQLOperator version.
 	container := statefulsets.MySQLAgentName
-	pods, err := m.podLister.List(SelectorForCluster(c))
-	if err != nil {
-		return errors.Wrapf(err, "listing pods matching %q", SelectorForCluster(c).String())
-	}
-	for _, pod := range pods {
-		if requiresMySQLAgentPodUpgrade(pod, container, operatorVersion) && canUpgradeMySQLAgent(pod) {
-			glog.Infof("Upgrading cluster pod '%s/%s' to latest operator version: %s", pod.Namespace, pod.Name, operatorVersion)
-			updated := updatePodToOperatorVersion(pod.DeepCopy(), m.opConfig.Images.MySQLAgentImage, operatorVersion)
-			err = m.podControl.PatchPod(pod, updated)
-			if err != nil {
-				return errors.Wrap(err, "upgrade operator version: PatchPod failed")
-			}
-		}
-	}
+	//pods, err := m.podLister.List(SelectorForCluster(c))
+	//if err != nil {
+	//	return errors.Wrapf(err, "listing pods matching %q", SelectorForCluster(c).String())
+	//}
+	//for _, pod := range pods {
+	//	if requiresMySQLAgentPodUpgrade(pod, container, operatorVersion) && canUpgradeMySQLAgent(pod) {
+	//		klog.Infof("Upgrading cluster pod '%s/%s' to latest operator version: %s", pod.Namespace, pod.Name, operatorVersion)
+	//		updated := updatePodToOperatorVersion(pod.DeepCopy(), m.opConfig.Images.MySQLAgentImage, operatorVersion)
+	//		err = m.podControl.PatchPod(pod, updated)
+	//		if err != nil {
+	//			return errors.Wrap(err, "upgrade operator version: PatchPod failed")
+	//		}
+	//	}
+	//}
 
 	// Ensure the StatefulSet is updated with the correct template 'mysql-agent' image for the current MySQLOperator version.
 	if requiresMySQLAgentStatefulSetUpgrade(ss, container, operatorVersion) {
-		glog.Infof("Upgrading cluster statefulset '%s/%s' to latest operator version: %s", ss.Namespace, ss.Name, operatorVersion)
+		klog.Infof("Upgrading cluster statefulset '%s/%s' to latest operator version: %s", ss.Namespace, ss.Name, operatorVersion)
 		updated := updateStatefulSetToOperatorVersion(ss.DeepCopy(), m.opConfig.Images.MySQLAgentImage, operatorVersion)
-		err = m.statefulSetControl.Patch(ss, updated)
+		err := m.statefulSetControl.Patch(ss, updated)
 		if err != nil {
 			return errors.Wrap(err, "upgrade operator version: PatchStatefulSet failed")
 		}
@@ -524,7 +536,7 @@ func (m *MySQLController) ensureMySQLOperatorVersion(c *v1alpha1.Cluster, ss *ap
 
 	// Ensure the Cluster is updated with the correct MySQLOperator version.
 	if !SelectorForClusterOperatorVersion(operatorVersion).Matches(labels.Set(c.Labels)) {
-		glog.Infof("Upgrading cluster statefulset '%s/%s' to latest operator version: %s", c.Namespace, c.Name, operatorVersion)
+		klog.Infof("Upgrading cluster statefulset '%s/%s' to latest operator version: %s", c.Namespace, c.Name, operatorVersion)
 		copy := c.DeepCopy()
 		copy.Labels[constants.MySQLOperatorVersionLabel] = operatorVersion
 		err := m.clusterUpdater.UpdateClusterLabels(copy, labels.Set(copy.Labels))
@@ -537,7 +549,7 @@ func (m *MySQLController) ensureMySQLOperatorVersion(c *v1alpha1.Cluster, ss *ap
 
 // updateClusterStatusForSS updates Cluster statuses based on changes to their associated StatefulSets.
 func (m *MySQLController) updateClusterStatus(cluster *v1alpha1.Cluster, ss *apps.StatefulSet) error {
-	glog.V(4).Infof("%s/%s: ss.Spec.Replicas=%d, ss.Status.ReadyReplicas=%d, ss.Status.Replicas=%d",
+	klog.Infof("%s/%s: ss.Spec.Replicas=%d, ss.Status.ReadyReplicas=%d, ss.Status.Replicas=%d",
 		cluster.Namespace, cluster.Name, *ss.Spec.Replicas, ss.Status.ReadyReplicas, ss.Status.Replicas)
 
 	status := cluster.Status.DeepCopy()
@@ -587,10 +599,10 @@ func (m *MySQLController) handleObject(obj interface{}) {
 			utilruntime.HandleError(fmt.Errorf("error decoding object tombstone, invalid type"))
 			return
 		}
-		glog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
+		klog.Infof("Recovered deleted object '%s' from tombstone", object.GetName())
 	}
 
-	glog.V(4).Infof("Processing object: %s", object.GetName())
+	klog.Infof("Processing object: %s", object.GetName())
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
 		// If this object is not owned by a Cluster, we should not do
 		// anything more with it.
@@ -600,7 +612,7 @@ func (m *MySQLController) handleObject(obj interface{}) {
 
 		cluster, err := m.clusterLister.Clusters(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
-			glog.V(4).Infof("ignoring orphaned object '%s' of Cluster '%s'", object.GetSelfLink(), ownerRef.Name)
+			klog.Infof("ignoring orphaned object '%s' of Cluster '%s'", object.GetSelfLink(), ownerRef.Name)
 			return
 		}
 
@@ -610,13 +622,13 @@ func (m *MySQLController) handleObject(obj interface{}) {
 }
 
 func (m *MySQLController) onClusterReady(clusterName string) {
-	glog.V(2).Infof("Cluster %s ready", clusterName)
+	klog.Infof("Cluster %s ready", clusterName)
 	metrics.IncEventCounter(clustersCreatedCount)
 	metrics.IncEventGauge(clustersTotalCount)
 }
 
 func (m *MySQLController) onClusterDeleted(clusterName string) {
-	glog.V(2).Infof("Cluster %s deleted", clusterName)
+	klog.Infof("Cluster %s deleted", clusterName)
 	metrics.IncEventCounter(clustersDeletedCount)
 	metrics.DecEventGauge(clustersTotalCount)
 }

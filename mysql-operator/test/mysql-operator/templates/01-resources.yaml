@@ -1,0 +1,68 @@
+---
+# Source: mysql-operator/templates/01-resources.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: mysqlclusters.mysql.oracle.com
+  labels:
+    release: RELEASE-NAME
+    chart: mysql-operator-0.2.1
+spec:
+  group: mysql.oracle.com
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    kind: Cluster
+    singular: mysqlcluster
+    plural: mysqlclusters
+---
+# Source: mysql-operator/templates/01-resources.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: mysqlbackups.mysql.oracle.com
+  labels:
+    release: RELEASE-NAME
+    chart: mysql-operator-0.2.1
+spec:
+  group: mysql.oracle.com
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    kind: Backup
+    singular: mysqlbackup
+    plural: mysqlbackups
+---
+# Source: mysql-operator/templates/01-resources.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: mysqlrestores.mysql.oracle.com
+  labels:
+    release: RELEASE-NAME
+    chart: mysql-operator-0.2.1
+spec:
+  group: mysql.oracle.com
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    kind: Restore
+    singular: mysqlrestore
+    plural: mysqlrestores
+---
+# Source: mysql-operator/templates/01-resources.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: mysqlbackupschedules.mysql.oracle.com
+  labels:
+    release: RELEASE-NAME
+    chart: mysql-operator-0.2.1
+spec:
+  group: mysql.oracle.com
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    kind: BackupSchedule
+    singular: mysqlbackupschedule
+    plural: mysqlbackupschedules

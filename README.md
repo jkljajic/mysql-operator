@@ -49,8 +49,35 @@ Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
 
 See [LICENSE](LICENSE) for more details.
 
+TODO:
+Add Dynamc generation ServiceAgentName and clusterrole & binder
+80% Add service for primary and secondary selector by label ROLE
+ADD refresh servuce when some changes acured 
+ADD CLEAN UP AFTER DOWN resources
+
+
 [1]: https://coreos.com/blog/introducing-operators.html
 [2]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/
 [3]: https://dev.mysql.com/doc/refman/5.7/en/mysql-innodb-cluster-userguide.html
 [4]: https://dev.mysql.com/doc/refman/5.7/en/group-replication.html
 [5]: docs/tutorial.md
+
+kubectl run -it --rm sysbench-client --image=perconalab/sysbench:latest --restart=Never -- bash
+sysbench oltp_read_only --tables=10 --table_size=1000000  --mysql-host=mysql-server --mysql-user=root --mysql-password=SGI8c0DNQYEP3s0o --mysql-db=sbtest   prepare
+sysbench oltp_read_only --tables=10 --table_size=1000000  --mysql-host=mysql-server --mysql-user=root --mysql-password=SGI8c0DNQYEP3s0o --mysql-db=sbtest  --mysql-ignore-errors=1180,1213,1020,1205,3100,3101 --time=300 --threads=16 --report-interval=1 run
+sysbench oltp_read_write --tables=10 --table_size=1000000  --mysql-host=mysql-server --mysql-user=root --mysql-password=SGI8c0DNQYEP3s0o --mysql-db=sbtest --mysql-ignore-errors=1180,1213,1020,1205,3100,3101 --time=300 --threads=16 --report-interval=1 run
+
+
+kubectl run -it --rm sysbench-client --image=perconalab/sysbench:latest --restart=Never -- bash
+#./tpcc.lua --mysql-host=172.16.0.11 --mysql-user=sbtest --mysql-password=sbtest --mysql-db=sbtest --time=300 --threads=64 --report-interval=1 --tables=10 --scale=100 --db-driver=mysql --use_fk=0 --force_pk=1 --trx_level=RC prepare
+#./tpcc.lua --mysql-host=172.16.0.12,172.16.0.13 --mysql-user=sbtest --mysql-password=sbtest --mysql-db=sbtest --time=$time --threads=$i --report-interval=1 --tables=10 --scale=100 --trx_level=RR  --db-driver=mysql --report_csv=yes --mysql-ignore-errors=1180,1213,1020,1205,3100,3101 run
+
+
+
+
+sysbench oltp_read_only --tables=10 --table_size=1000000  --mysql-host=cluster1-haproxy -uroot -proot_password --mysql-user=root --mysql-password=root_password --mysql-db=sbtest   prepare
+sysbench oltp_read_only --tables=10 --table_size=1000000  --mysql-host=cluster1-haproxy --mysql-user=root --mysql-password=root_password --mysql-db=sbtest  --time=300 --threads=16 --report-interval=1 run
+sysbench oltp_read_write --tables=10 --table_size=1000000  --mysql-host=mcluster1-haproxy --mysql-user=root --mysql-password=root_password --mysql-db=sbtest  --time=300 --threads=16 --report-interval=1 run
+
+
+helm upgrade mysql-operator --namespace kube-operators ./mysql-operator/

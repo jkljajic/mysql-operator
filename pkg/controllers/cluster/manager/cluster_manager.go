@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
+	klog "k8s.io/klog/v2"
 	"github.com/pkg/errors"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -29,11 +29,11 @@ import (
 	kubernetes "k8s.io/client-go/kubernetes"
 	utilexec "k8s.io/utils/exec"
 
-	"github.com/oracle/mysql-operator/pkg/cluster"
-	"github.com/oracle/mysql-operator/pkg/cluster/innodb"
-	"github.com/oracle/mysql-operator/pkg/controllers/cluster/labeler"
-	"github.com/oracle/mysql-operator/pkg/util/metrics"
-	"github.com/oracle/mysql-operator/pkg/util/mysqlsh"
+	"github.com/jkljajic/mysql-operator/pkg/cluster"
+	"github.com/jkljajic/mysql-operator/pkg/cluster/innodb"
+	"github.com/jkljajic/mysql-operator/pkg/controllers/cluster/labeler"
+	"github.com/jkljajic/mysql-operator/pkg/util/metrics"
+	"github.com/jkljajic/mysql-operator/pkg/util/mysqlsh"
 )
 
 const pollingIntervalSeconds = 15
@@ -113,7 +113,7 @@ func (m *ClusterManager) getClusterStatus(ctx context.Context) (*innodb.ClusterS
 // agent is part of the InnoDB cluster and is online.
 func (m *ClusterManager) Sync(ctx context.Context) bool {
 	if !isDatabaseRunning(ctx) {
-		glog.V(2).Infof("Database not yet running. Waiting...")
+		klog.Infof("Database not yet running. Waiting...")
 		return false
 	}
 
@@ -123,7 +123,7 @@ func (m *ClusterManager) Sync(ctx context.Context) bool {
 	if err != nil {
 		myshErr, ok := errors.Cause(err).(*mysqlsh.Error)
 		if !ok {
-			glog.Errorf("Failed to get the cluster status: %+v", err)
+			klog.Errorf("Failed to get the cluster status: %+v", err)
 			return false
 		}
 
@@ -132,13 +132,13 @@ func (m *ClusterManager) Sync(ctx context.Context) bool {
 		if m.Instance.Ordinal == 0 {
 			clusterStatus, err = m.bootstrap(ctx, myshErr)
 			if err != nil {
-				glog.Errorf("Error bootstrapping cluster: %v", err)
+				klog.Errorf("Error bootstrapping cluster: %v", err)
 				metrics.IncEventCounter(clusterCreateErrorCount)
 				return false
 			}
 			metrics.IncEventCounter(clusterCreateCount)
 		} else {
-			glog.V(2).Info("Cluster not yet present. Waiting...")
+			klog.Info("Cluster not yet present. Waiting...")
 			return false
 		}
 	}
@@ -148,8 +148,18 @@ func (m *ClusterManager) Sync(ctx context.Context) bool {
 	cluster.SetStatus(clusterStatus)
 
 	if clusterStatus.DefaultReplicaSet.Status == innodb.ReplicaSetStatusNoQuorum {
-		glog.V(4).Info("Cluster as seen from this instance is in NO_QUORUM state")
+		klog.Info("Cluster as seen from this instance is in NO_QUORUM state")
 		metrics.IncEventCounter(clusterNoQuorumCount)
+		//TODO: Recovery from Quorum ?????
+		//TODO: Rescan
+		//TODO: if failes and complain about rescan find first online and run scan
+		//Dba.getCluster: This function is not available through a session to an instance belonging to an unmanaged replication group (RuntimeError)
+		// or
+		// is part of the Group Replication group but is not in the metadata. Please use <Cluster>.rescan() to update the metadata.
+
+		// cluster.force_quorum_using_partition_of('root:Qza3yXw2Dh8HbWdBvxEPRUYnprp2s@mysql-server-1.mysql-server-headless:3306')
+		//find status first ONLINE and trigger  force_quorum_using_partition_of
+		m.handleInstanceNoQuorum(ctx, clusterStatus)
 	}
 
 	online := false
@@ -157,18 +167,18 @@ func (m *ClusterManager) Sync(ctx context.Context) bool {
 	switch instanceStatus {
 	case innodb.InstanceStatusOnline:
 		metrics.IncStatusCounter(instanceStatusCount, innodb.InstanceStatusOnline)
-		glog.V(4).Info("MySQL instance is online")
+		klog.Info("MySQL instance is online")
 		online = true
 
 	case innodb.InstanceStatusRecovering:
 		metrics.IncStatusCounter(instanceStatusCount, innodb.InstanceStatusRecovering)
-		glog.V(4).Info("MySQL instance is recovering")
+		klog.Info("MySQL instance is recovering")
 
 	case innodb.InstanceStatusMissing:
 		metrics.IncStatusCounter(instanceStatusCount, innodb.InstanceStatusMissing)
 		primaryAddr, err := clusterStatus.GetPrimaryAddr()
 		if err != nil {
-			glog.Errorf("%v", err)
+			klog.Errorf("%v", err)
 			return false
 		}
 		online = m.handleInstanceMissing(ctx, primaryAddr)
@@ -182,7 +192,7 @@ func (m *ClusterManager) Sync(ctx context.Context) bool {
 		metrics.IncStatusCounter(instanceStatusCount, innodb.InstanceStatusNotFound)
 		primaryAddr, err := clusterStatus.GetPrimaryAddr()
 		if err != nil {
-			glog.Errorf("%v", err)
+			klog.Errorf("%v", err)
 			return false
 		}
 		online = m.handleInstanceNotFound(ctx, primaryAddr)
@@ -197,7 +207,7 @@ func (m *ClusterManager) Sync(ctx context.Context) bool {
 
 	default:
 		metrics.IncStatusCounter(instanceStatusCount, innodb.InstanceStatusUnknown)
-		glog.Errorf("Received unrecognised cluster membership status: %q", instanceStatus)
+		klog.Errorf("Received unrecognised cluster membership status: %q", instanceStatus)
 	}
 
 	if online && !m.Instance.MultiMaster {
@@ -213,12 +223,12 @@ func (m *ClusterManager) ensurePrimaryControllerState(ctx context.Context, statu
 	// Are we the primary?
 	primaryAddr, err := status.GetPrimaryAddr()
 	if err != nil {
-		glog.Errorf("%v", err)
+		klog.Errorf("%v", err)
 		return
 	}
 	if !strings.HasPrefix(primaryAddr, m.Instance.Name()) {
 		if m.primaryCancelFunc != nil {
-			glog.V(4).Info("Calling primaryCancelFunc()")
+			klog.Info("Calling primaryCancelFunc()")
 			m.primaryCancelFunc()
 			m.primaryCancelFunc = nil
 		}
@@ -250,28 +260,27 @@ func (m *ClusterManager) handleInstanceMissing(ctx context.Context, primaryAddr 
 	// TODO: just call RejoinInstanceToCluster and handle the error.
 	instanceState, err := primarySh.CheckInstanceState(ctx, m.Instance.GetShellURI())
 	if err != nil {
-		glog.Errorf("Failed to determine if we can rejoin the cluster: %v", err)
+		klog.Errorf("Failed to determine if we can rejoin the cluster: %v", err)
 		return false
 	}
-	glog.V(4).Infof("Checking if instance can rejoin cluster")
+	klog.Infof("Checking if instance can rejoin cluster")
 	if instanceState.CanRejoinCluster() {
 		whitelistCIDR, err := m.Instance.WhitelistCIDR()
 		if err != nil {
-			glog.Errorf("Getting CIDR to whitelist for GR: %v", err)
+			klog.Errorf("Getting CIDR to whitelist for GR: %v", err)
 			return false
 		}
-		glog.V(4).Infof("Attempting to rejoin instance to cluster")
+		klog.Infof("Attempting to rejoin instance to cluster")
 		if err := primarySh.RejoinInstanceToCluster(ctx, m.Instance.GetShellURI(), mysqlsh.Options{
-			"ipWhitelist":   whitelistCIDR,
-			"memberSslMode": "REQUIRED",
+			"ipWhitelist": whitelistCIDR,
 		}); err != nil {
-			glog.Errorf("Failed to rejoin cluster: %v", err)
+			klog.Errorf("Failed to rejoin cluster: %v", err)
 			return false
 		}
 	} else {
-		glog.V(4).Infof("Removing instance from cluster")
+		klog.Infof("Removing instance from cluster")
 		if err := primarySh.RemoveInstanceFromCluster(ctx, m.Instance.GetShellURI(), mysqlsh.Options{"force": "True"}); err != nil {
-			glog.Errorf("Failed to remove from cluster: %v", err)
+			klog.Errorf("Failed to remove from cluster: %v", err)
 			return false
 		}
 	}
@@ -279,25 +288,50 @@ func (m *ClusterManager) handleInstanceMissing(ctx context.Context, primaryAddr 
 }
 
 func (m *ClusterManager) handleInstanceNotFound(ctx context.Context, primaryAddr string) bool {
-	glog.V(4).Infof("Adding secondary instance to the cluster")
+	klog.Infof("Adding secondary instance to the cluster")
 
 	primaryURI := fmt.Sprintf("%s:%s@%s", m.Instance.GetUser(), m.Instance.GetPassword(), primaryAddr)
 	psh := m.mysqlshFactory(primaryURI)
 
 	whitelistCIDR, err := m.Instance.WhitelistCIDR()
 	if err != nil {
-		glog.Errorf("Getting CIDR to whitelist for GR: %v", err)
+		klog.Errorf("Getting CIDR to whitelist for GR: %v", err)
 		return false
 	}
-
+	//TODO: Too many concurrent clone operations. Maximum allowed wait
 	if err := psh.AddInstanceToCluster(ctx, m.Instance.GetShellURI(), mysqlsh.Options{
-		"memberSslMode": "REQUIRED",
-		"ipWhitelist":   whitelistCIDR,
+		"recoveryMethod": "clone",
+		"ipWhitelist":    whitelistCIDR,
 	}); err != nil {
-		glog.Errorf("Failed to add to cluster: %v", err)
+		klog.Errorf("Failed to add to cluster: %v", err)
 		return false
 	}
 	return true
+}
+
+func (m *ClusterManager) handleInstanceNoQuorum(ctx context.Context, status *innodb.ClusterStatus) bool {
+	klog.Infof("Solving cluster quorum")
+
+	if status.DefaultReplicaSet.Topology == nil {
+		return false
+	}
+
+	for _, node := range status.DefaultReplicaSet.Topology {
+		if node.Status == innodb.InstanceStatusOnline {
+
+			nodeURI := fmt.Sprintf("%s:%s@%s:%d", m.Instance.GetUser(), m.Instance.GetPassword(), node.Name(), innodb.MySQLDBPort)
+			psh := m.mysqlshFactory(nodeURI)
+
+			err := psh.ForceQuorumUsingPartitionOf(ctx, nodeURI)
+			if err != nil {
+				klog.Fatalf("Failed to create quorum on server %s", node.Name())
+				return false
+			}
+			return false
+		}
+	}
+
+	return false
 }
 
 // bootstrap bootstraps the cluster. Called on the first Pod in the StatefulSet.
@@ -306,7 +340,7 @@ func (m *ClusterManager) bootstrap(ctx context.Context, mshErr *mysqlsh.Error) (
 		return nil, mshErr
 	}
 
-	if strings.Contains(mshErr.Message, "(metadata exists, but GR is not active)") {
+	if strings.Contains(mshErr.Message, "(metadata exists, instance belongs to that metadata, but GR is not active)") {
 		return m.rebootFromOutage(ctx)
 	}
 
@@ -314,7 +348,7 @@ func (m *ClusterManager) bootstrap(ctx context.Context, mshErr *mysqlsh.Error) (
 }
 
 func (m *ClusterManager) createCluster(ctx context.Context) (*innodb.ClusterStatus, error) {
-	glog.Infof("Creating InnoDB cluster")
+	klog.Infof("Creating InnoDB cluster")
 
 	msh := m.mysqlshFactory(m.Instance.GetShellURI())
 
@@ -323,8 +357,7 @@ func (m *ClusterManager) createCluster(ctx context.Context) (*innodb.ClusterStat
 		return nil, errors.Wrap(err, "getting CIDR to whitelist for  GR")
 	}
 	opts := mysqlsh.Options{
-		"memberSslMode": "REQUIRED",
-		"ipWhitelist":   whitelistCIDR,
+		"ipWhitelist": whitelistCIDR,
 	}
 	if m.Instance.MultiMaster {
 		opts["force"] = "True"
@@ -338,7 +371,7 @@ func (m *ClusterManager) createCluster(ctx context.Context) (*innodb.ClusterStat
 }
 
 func (m *ClusterManager) rebootFromOutage(ctx context.Context) (*innodb.ClusterStatus, error) {
-	glog.Info("Found existing InnoDB cluster (metadata exists, but GR is not active)")
+	klog.Info("Found existing InnoDB cluster (metadata exists, but GR is not active)")
 
 	msh := m.mysqlshFactory(m.Instance.GetShellURI())
 	if err := msh.RebootClusterFromCompleteOutage(ctx); err != nil {

@@ -23,26 +23,26 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/heptiolabs/healthcheck"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	kubeinformers "k8s.io/client-go/informers"
 	kubernetes "k8s.io/client-go/kubernetes"
 	scheme "k8s.io/client-go/kubernetes/scheme"
 	rest "k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
 
-	cluster "github.com/oracle/mysql-operator/pkg/cluster"
-	backupcontroller "github.com/oracle/mysql-operator/pkg/controllers/backup"
-	clustermgr "github.com/oracle/mysql-operator/pkg/controllers/cluster/manager"
-	restorecontroller "github.com/oracle/mysql-operator/pkg/controllers/restore"
-	clientset "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned"
-	opscheme "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/scheme"
-	informers "github.com/oracle/mysql-operator/pkg/generated/informers/externalversions"
-	agentopts "github.com/oracle/mysql-operator/pkg/options/agent"
-	metrics "github.com/oracle/mysql-operator/pkg/util/metrics"
-	signals "github.com/oracle/mysql-operator/pkg/util/signals"
+	cluster "github.com/jkljajic/mysql-operator/pkg/cluster"
+	backupcontroller "github.com/jkljajic/mysql-operator/pkg/controllers/backup"
+	clustermgr "github.com/jkljajic/mysql-operator/pkg/controllers/cluster/manager"
+	restorecontroller "github.com/jkljajic/mysql-operator/pkg/controllers/restore"
+	clientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
+	opscheme "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/scheme"
+	informers "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions"
+	agentopts "github.com/jkljajic/mysql-operator/pkg/options/agent"
+	metrics "github.com/jkljajic/mysql-operator/pkg/util/metrics"
+	signals "github.com/jkljajic/mysql-operator/pkg/util/signals"
 )
 
 const (
@@ -77,12 +77,12 @@ func Run(opts *agentopts.MySQLAgentOpts) error {
 	// Set up healthchecks (liveness and readiness).
 	checkInCluster, err := cluster.NewHealthCheck()
 	if err != nil {
-		glog.Fatal(err)
+		klog.Fatal(err)
 	}
 	health := healthcheck.NewHandler()
 	health.AddReadinessCheck("node-in-cluster", checkInCluster)
 	go func() {
-		glog.Fatal(http.ListenAndServe(
+		klog.Fatal(http.ListenAndServe(
 			net.JoinHostPort(opts.Address, strconv.Itoa(int(opts.HealthcheckPort))),
 			health,
 		))
@@ -107,7 +107,7 @@ func Run(opts *agentopts.MySQLAgentOpts) error {
 	clustermgr.RegisterMetrics()
 	backupcontroller.RegisterMetrics()
 	restorecontroller.RegisterMetrics()
-	http.Handle("/metrics", prometheus.Handler())
+	http.Handle("/metrics", promhttp.Handler())
 	go http.ListenAndServe(metricsEndpoint, nil)
 
 	// Block until local instance successfully initialised.
@@ -155,7 +155,7 @@ func Run(opts *agentopts.MySQLAgentOpts) error {
 
 	<-ctx.Done()
 
-	glog.Info("Waiting for all controllers to shut down gracefully")
+	klog.Info("Waiting for all controllers to shut down gracefully")
 	wg.Wait()
 
 	return nil

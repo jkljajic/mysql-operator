@@ -1,8 +1,50 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-agent
+---
 apiVersion: mysql.oracle.com/v1alpha1
 kind: Cluster
 metadata:
-  name: mysql
+  name: mysql-server
 spec:
-  members: 1
+  nodeSelector:
+   master: test
+  multiMaster: true
+  members: 3
+  rootPasswordSecret:
+    name: mysql-server-root-password 
+  sslSecret:
+    name: mysql-ssl-secret
   config:
-    name: mycnf
+    name: mysql-cnf
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-ssl-secret
+type: Opaque
+data:
+  ca.crt: <base64d Root CA certificate>
+  tls.crt: <base64d server certificate>
+  tls.key:  <base64d server private key>
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-cnf
+data:
+ client.cnf
+    # MySQL command-line client options
+    [mysql]
+    prompt="innodb> "
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-server-root-password
+type: Opaque
+data:
+  password: U0dJOGMwRE5RWUVQM3Mwbw==

@@ -1,7 +1,47 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-server-root-password
+type: Opaque
+data:
+  password: U0dJOGMwRE5RWUVQM3Mwbw==
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-cnf
+data:
+ client.cnf
+    # MySQL command-line client options
+    [mysql]
+    default_authentication_plugin=mysql_native_password
+    prompt="innodb> "
+    
+    
+---
 apiVersion: mysql.oracle.com/v1alpha1
 kind: Cluster
 metadata:
-  name: mysql
+  name: mysql-server
 spec:
-  multiMaster: true
+  multiMaster: false
   members: 3
+  rootPasswordSecret:
+    name: mysql-server-root-password
+#  sslSecret:
+#    name: mysql-ssl-secret
+  config:
+    name: mysql-cnf
+  volumeClaimTemplate:
+    metadata:
+      name: data
+    spec:
+      storageClassName: freenas-nfs
+      accessModes:
+        - ReadWriteMany
+      resources:
+        requests:
+          storage: 1Gi
+

@@ -18,7 +18,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/oracle/mysql-operator/pkg/controllers/util"
+	"github.com/jkljajic/mysql-operator/pkg/controllers/util"
 )
 
 type fakePodControl struct {

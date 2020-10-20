@@ -15,12 +15,14 @@
 package cluster
 
 import (
-	"k8s.io/api/core/v1"
+	"context"
+
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	"github.com/oracle/mysql-operator/pkg/resources/secrets"
+	"github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	"github.com/jkljajic/mysql-operator/pkg/resources/secrets"
 )
 
 // SecretControlInterface defines the interface that the ClusterController
@@ -44,10 +46,10 @@ func NewRealSecretControl(client kubernetes.Interface) SecretControlInterface {
 func (rsc *realSecretControl) GetForCluster(cluster *v1alpha1.Cluster) (*v1.Secret, error) {
 	return rsc.client.CoreV1().
 		Secrets(cluster.Namespace).
-		Get(secrets.GetRootPasswordSecretName(cluster), metav1.GetOptions{})
+		Get(context.Background(), secrets.GetRootPasswordSecretName(cluster), metav1.GetOptions{})
 }
 
 func (rsc *realSecretControl) CreateSecret(s *v1.Secret) error {
-	_, err := rsc.client.CoreV1().Secrets(s.Namespace).Create(s)
+	_, err := rsc.client.CoreV1().Secrets(s.Namespace).Create(context.TODO(), s, metav1.CreateOptions{})
 	return err
 }

@@ -15,8 +15,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/oracle/mysql-operator/pkg/apis/mysql/v1alpha1"
-	scheme "github.com/oracle/mysql-operator/pkg/generated/clientset/versioned/scheme"
+	"context"
+
+	v1alpha1 "github.com/jkljajic/mysql-operator/pkg/apis/mysql/v1alpha1"
+	scheme "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -64,7 +66,7 @@ func (c *restores) Get(name string, options v1.GetOptions) (result *v1alpha1.Res
 		Resource("mysqlrestores").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }
@@ -76,7 +78,7 @@ func (c *restores) List(opts v1.ListOptions) (result *v1alpha1.RestoreList, err 
 		Namespace(c.ns).
 		Resource("mysqlrestores").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }
@@ -88,7 +90,7 @@ func (c *restores) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Namespace(c.ns).
 		Resource("mysqlrestores").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
+		Watch(context.Background())
 }
 
 // Create takes the representation of a restore and creates it.  Returns the server's representation of the restore, and an error, if there is any.
@@ -98,7 +100,7 @@ func (c *restores) Create(restore *v1alpha1.Restore) (result *v1alpha1.Restore, 
 		Namespace(c.ns).
 		Resource("mysqlrestores").
 		Body(restore).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }
@@ -111,7 +113,7 @@ func (c *restores) Update(restore *v1alpha1.Restore) (result *v1alpha1.Restore, 
 		Resource("mysqlrestores").
 		Name(restore.Name).
 		Body(restore).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }
@@ -123,7 +125,7 @@ func (c *restores) Delete(name string, options *v1.DeleteOptions) error {
 		Resource("mysqlrestores").
 		Name(name).
 		Body(options).
-		Do().
+		Do(context.Background()).
 		Error()
 }
 
@@ -134,7 +136,7 @@ func (c *restores) DeleteCollection(options *v1.DeleteOptions, listOptions v1.Li
 		Resource("mysqlrestores").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
-		Do().
+		Do(context.Background()).
 		Error()
 }
 
@@ -147,7 +149,7 @@ func (c *restores) Patch(name string, pt types.PatchType, data []byte, subresour
 		SubResource(subresources...).
 		Name(name).
 		Body(data).
-		Do().
+		Do(context.Background()).
 		Into(result)
 	return
 }
