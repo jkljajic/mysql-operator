@@ -14,7 +14,7 @@
 
 package version
 
-var buildVersion ="0.6.7"
+var buildVersion ="0.6.6"
 
 // GetBuildVersion returns the MySQL Operator build version
 func GetBuildVersion() string {

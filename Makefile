@@ -15,10 +15,10 @@
 ifdef WERCKER
     # Insert swear words about mysql group replication and hostname length. Arghh..
     VERSION ?= ${WERCKER_GIT_COMMIT}
-    TENANT := "jkljajic"
+    TENANT := "seavus"
 else
     VERSION ?= $(shell git describe --always)
-    TENANT ?= "jkljajic"
+    TENANT ?= "seavus"
 endif
 
 PKG             := github.com/oracle/mysql-operator

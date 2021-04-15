@@ -218,7 +218,7 @@ func mysqlServerContainer(cluster *v1alpha1.Cluster, mysqlServerImage string, ro
          # Set baseServerID
          base=%d
 
-         # Finds the replica index from the hostname, and uses this to define
+		 # Finds the replica index from the hostname, and uses this to define
          # a unique server id for this instance.
          index=$(cat /etc/hostname | grep -o '[^-]*$')
          /entrypoint.sh %s`, baseServerID, entryPointArgs)
@@ -380,7 +380,7 @@ func NewForCluster(cluster *v1alpha1.Cluster, images operatoropts.Images, servic
 
 	containers := []corev1.Container{
 		mysqlServerContainer(cluster, cluster.Spec.Repository, rootPassword, members, baseServerID),
-		mysqlAgentContainer(cluster, images.MySQLAgentImage, rootPassword, members)}
+		mysqlAgentContainer(cluster, images.MySQLAgentImage, rootPassword, members)
 
 	podLabels := map[string]string{
 		constants.ClusterLabel:              cluster.Name,
@@ -417,7 +417,7 @@ func NewForCluster(cluster *v1alpha1.Cluster, images operatoropts.Images, servic
 					Labels: podLabels,
 					Annotations: map[string]string{
 						"prometheus.io/scrape": "true",
-						"prometheus.io/port":   "8080",
+						"prometheus.io/port":   "9182",
 					},
 				},
 				Spec: corev1.PodSpec{

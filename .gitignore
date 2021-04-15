@@ -52,3 +52,4 @@ test/e2e/manifests/e2e-mysql-operator-controller.yaml
 vendor/
 __debug_bin
 /vendor
+examples/test

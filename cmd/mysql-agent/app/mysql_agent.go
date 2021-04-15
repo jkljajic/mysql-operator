@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	metricsEndpoint = "0.0.0.0:8080"
+	metricsEndpoint = "0.0.0.0:9182"
 )
 
 func init() {
