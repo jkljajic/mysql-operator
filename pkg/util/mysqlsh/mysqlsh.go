@@ -135,7 +135,7 @@ func (r *runner) CheckInstanceState(ctx context.Context, uri string) (*innodb.In
 	python := fmt.Sprintf("print(dba.get_cluster('%s').check_instance_state('%s'))", innodb.DefaultClusterName, uri)
 	output, err := r.run(ctx, python)
 	if err != nil {
-		if !strings.Contains(err.Error(), "already belongs to the cluster: 'default'") {
+		if !strings.Contains(err.Error(), fmt.Sprintf("already belongs to the cluster: '%s'", innodb.DefaultClusterName)) {
 			return nil, err
 		}
 		output = []byte("{\"reason\":\"recoverable\",\"state\":\"ok\"}")

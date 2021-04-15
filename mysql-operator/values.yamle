@@ -7,5 +7,5 @@ operator:
 
 image:
   registry: seavus
-  tag: 0.7.1
+  tag: 0.7.3
   pullPolicy: Always
