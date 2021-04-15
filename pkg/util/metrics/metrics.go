@@ -22,6 +22,17 @@ import (
 
 var podName string
 var clusterName string
+var PrometheusRegistry *prometheus.Registry
+
+func MustRegister(collector prometheus.Collector) {
+	PrometheusRegistry.MustRegister(collector)
+
+}
+
+func CreatePrometheysRegistry() *prometheus.Registry {
+	PrometheusRegistry = prometheus.NewRegistry()
+	return PrometheusRegistry
+}
 
 // RegisterPodName will set the name of the current pod.
 func RegisterPodName(name string) {
@@ -36,14 +47,14 @@ func RegisterClusterName(name string) {
 // RegisterOperatorMetric will register a single operator metric.
 func RegisterOperatorMetric(metric prometheus.Collector) {
 	assertPodName()
-	prometheus.MustRegister(metric)
+	PrometheusRegistry.MustRegister(metric)
 }
 
 // RegisterAgentMetric will register a single agent metric.
 func RegisterAgentMetric(metric prometheus.Collector) {
 	assertPodName()
 	assertClusterName()
-	prometheus.MustRegister(metric)
+	PrometheusRegistry.MustRegister(metric)
 }
 
 // NewOperatorEventCounter will build a new prometheus.CounterVec.

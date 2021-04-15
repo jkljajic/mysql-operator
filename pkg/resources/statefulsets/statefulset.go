@@ -380,7 +380,8 @@ func NewForCluster(cluster *v1alpha1.Cluster, images operatoropts.Images, servic
 
 	containers := []corev1.Container{
 		mysqlServerContainer(cluster, cluster.Spec.Repository, rootPassword, members, baseServerID),
-		mysqlAgentContainer(cluster, images.MySQLAgentImage, rootPassword, members)
+		mysqlAgentContainer(cluster, images.MySQLAgentImage, rootPassword, members),
+	}
 
 	podLabels := map[string]string{
 		constants.ClusterLabel:              cluster.Name,

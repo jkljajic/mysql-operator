@@ -25,7 +25,6 @@ import (
 
 	"github.com/heptiolabs/healthcheck"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	kubeinformers "k8s.io/client-go/informers"
 	kubernetes "k8s.io/client-go/kubernetes"
@@ -43,10 +42,6 @@ import (
 	agentopts "github.com/jkljajic/mysql-operator/pkg/options/agent"
 	metrics "github.com/jkljajic/mysql-operator/pkg/util/metrics"
 	signals "github.com/jkljajic/mysql-operator/pkg/util/signals"
-)
-
-const (
-	metricsEndpoint = "0.0.0.0:9182"
 )
 
 func init() {
@@ -104,12 +99,7 @@ func Run(opts *agentopts.MySQLAgentOpts) error {
 	// Initialise the agent metrics.
 	metrics.RegisterPodName(opts.Hostname)
 	metrics.RegisterClusterName(manager.Instance.ClusterName)
-	clustermgr.RegisterMetrics()
-	backupcontroller.RegisterMetrics()
-	restorecontroller.RegisterMetrics()
-	http.Handle("/metrics", promhttp.Handler())
-	go http.ListenAndServe(metricsEndpoint, nil)
-
+	go mysql_collector()
 	// Block until local instance successfully initialised.
 	for !manager.Sync(ctx) {
 		time.Sleep(10 * time.Second)

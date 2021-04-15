@@ -30,7 +30,7 @@ import (
 
 const (
 	configPath      = "/etc/mysql-operator/mysql-operator-config.yaml"
-	metricsEndpoint = "0.0.0.0:8080"
+	metricsEndpoint = "0.0.0.0:9183"
 )
 
 func main() {

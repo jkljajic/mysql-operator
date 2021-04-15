@@ -22,7 +22,6 @@ import (
 	"time"
 
 	klog "k8s.io/klog/v2"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -35,12 +34,14 @@ import (
 	clientset "github.com/jkljajic/mysql-operator/pkg/generated/clientset/versioned"
 	informers "github.com/jkljajic/mysql-operator/pkg/generated/informers/externalversions"
 	operatoropts "github.com/jkljajic/mysql-operator/pkg/options/operator"
-	metrics "github.com/jkljajic/mysql-operator/pkg/util/metrics"
+	"github.com/jkljajic/mysql-operator/pkg/util/metrics"
 	signals "github.com/jkljajic/mysql-operator/pkg/util/signals"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
-	metricsEndpoint = "0.0.0.0:8080"
+	metricsEndpoint = "0.0.0.0:9183"
 )
 
 // resyncPeriod computes the time interval a shared informer waits before
@@ -59,10 +60,16 @@ func Run(s *operatoropts.MySQLOperatorOpts) error {
 		return err
 	}
 
-	// Initialise the operator metrics.
+	//// Initialise the operator metrics.
+	var registry = metrics.CreatePrometheysRegistry()
 	metrics.RegisterPodName(s.Hostname)
 	cluster.RegisterMetrics()
-	http.Handle("/metrics", promhttp.Handler())
+	gatherers := prometheus.Gatherers{
+		prometheus.DefaultGatherer,
+		registry,
+	}
+
+	http.Handle("/metrics", promhttp.HandlerFor(gatherers, promhttp.HandlerOpts{}))
 	go http.ListenAndServe(metricsEndpoint, nil)
 
 	ctx, cancelFunc := context.WithCancel(context.Background())

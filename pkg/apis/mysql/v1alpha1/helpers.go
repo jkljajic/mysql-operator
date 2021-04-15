@@ -21,7 +21,7 @@ import (
 
 const (
 	// DefaultVersion is the MySQL version to use if not specified explicitly by user
-	DefaultVersion      = "8.0.21"
+	DefaultVersion      = "8.0.22"
 	defaultMembers      = 3
 	defaultBaseServerID = 1000
 	defaultLogLevel     = 4
